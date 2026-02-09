@@ -308,30 +308,154 @@ export const GoodsReceiptFlow: React.FC<GoodsReceiptFlowProps> = ({
 
   const handleFinalize = () => {
     const batchId = `b-${Date.now()}`;
-    const issues: string[] = [];
-    const types = new Set<string>();
+    
+    // Separate issue tracking by category
+    const qualityIssues: string[] = [];
+    const partialDeliveryIssues: string[] = [];
+    const overdeliveryIssues: string[] = [];
+    const returnTrackingInfo: string[] = [];
+    
+    const qualityTypes = new Set<string>();
+    
     if (initialMode !== 'return') {
       cart.forEach(c => {
         const lbl = `${c.item.name} (${c.item.sku})`;
+        const calc = getLineCalc(c);
+        
+        // QUALITY ISSUES: Damaged, Wrong, Rejected
         if (c.qtyRejected > 0) {
           const r = c.rejectionReason === 'Damaged' ? 'Beschädigt' : c.rejectionReason === 'Wrong' ? 'Falsch' : c.rejectionReason === 'Overdelivery' ? 'Übermenge' : 'Sonstiges';
-          issues.push(`${lbl}: ${c.qtyRejected}x Abgelehnt (${r}) - ${c.rejectionNotes}`);
-          if (c.rejectionReason === 'Damaged') types.add('Beschädigung');
-          if (c.rejectionReason === 'Wrong') types.add('Falschlieferung');
-          if (c.rejectionReason === 'Overdelivery') types.add('Überlieferung');
-          if (c.rejectionReason === 'Other') types.add('Abweichung');
+          
+          // Check individual ticket config flags
+          if (c.rejectionReason === 'Damaged' && ticketConfig.damage) {
+            qualityIssues.push(`${lbl}: ${c.qtyRejected}x Abgelehnt (${r}) - ${c.rejectionNotes || 'Keine Details'}`);
+            qualityTypes.add('Beschädigung');
+          } else if (c.rejectionReason === 'Wrong' && ticketConfig.wrong) {
+            qualityIssues.push(`${lbl}: ${c.qtyRejected}x Abgelehnt (${r}) - ${c.rejectionNotes || 'Keine Details'}`);
+            qualityTypes.add('Falschlieferung');
+          } else if (c.rejectionReason === 'Other' && ticketConfig.rejected) {
+            qualityIssues.push(`${lbl}: ${c.qtyRejected}x Abgelehnt (${r}) - ${c.rejectionNotes || 'Keine Details'}`);
+            qualityTypes.add('Abweichung');
+          } else if (c.rejectionReason === 'Overdelivery' && ticketConfig.extra) {
+            // Overdelivery rejections handled separately
+            overdeliveryIssues.push(`${lbl}: ${c.qtyRejected}x zurückgesendet (Übermenge) - ${c.rejectionNotes || 'Keine Details'}`);
+          }
+          
+          // Add return tracking info if available
+          if (c.returnCarrier || c.returnTrackingId) {
+            const trackingDetail = `Rücksendung ${lbl}: ${c.qtyRejected}x – Versandart: ${c.returnCarrier || 'Nicht angegeben'} – Tracking: ${c.returnTrackingId || 'Nicht angegeben'}${c.rejectionNotes ? ` – Grund: ${c.rejectionNotes}` : ''}`;
+            returnTrackingInfo.push(trackingDetail);
+          }
         }
+        
+        // PARTIAL DELIVERY (OFFEN > 0)
+        if (ticketConfig.missing && linkedPoId && calc.offen > 0) {
+          partialDeliveryIssues.push(`${lbl}: Bestellt ${calc.bestellt}, Geliefert ${calc.heute}, Offen ${calc.offen}`);
+        }
+        
+        // OVERDELIVERY (ZU VIEL > 0)
         if (ticketConfig.extra && c.orderedQty !== undefined && c.qtyAccepted > 0) {
           const tot = (c.previouslyReceived || 0) + c.qtyAccepted;
-          if (tot > c.orderedQty) { issues.push(`[Übermenge] ${lbl}: ${tot - c.orderedQty} Stück zu viel`); types.add('Überlieferung'); }
+          if (tot > c.orderedQty) {
+            overdeliveryIssues.push(`${lbl}: Bestellt ${c.orderedQty}, Gesamt geliefert ${tot}, Zu viel ${tot - c.orderedQty}`);
+          }
         }
       });
-      if (issues.length > 0) {
-        onAddTicket({ id: crypto.randomUUID(), receiptId: batchId, subject: `Reklamation: ${Array.from(types).join(', ')}`, status: 'Open', priority: 'High',
-          messages: [{ id: crypto.randomUUID(), author: 'System', text: `Automatisch erstellter Fall:\n\n${issues.join('\n')}`, timestamp: Date.now(), type: 'system' }]
+      
+      // CREATE TICKET FOR QUALITY ISSUES (Damage, Wrong, Rejected)
+      if (qualityIssues.length > 0) {
+        const qualityMessages: any[] = [
+          { 
+            id: crypto.randomUUID(), 
+            author: 'System', 
+            text: `Automatisch erstellter Qualitätsfall:\n\n${qualityIssues.join('\n')}`, 
+            timestamp: Date.now(), 
+            type: 'system' 
+          }
+        ];
+        
+        // Add return tracking as separate message if available
+        if (returnTrackingInfo.length > 0) {
+          qualityMessages.push({
+            id: crypto.randomUUID(),
+            author: 'System',
+            text: `Rücksendung erfasst:\n\n${returnTrackingInfo.join('\n')}`,
+            timestamp: Date.now() + 1,
+            type: 'system'
+          });
+        }
+        
+        onAddTicket({ 
+          id: crypto.randomUUID(), 
+          receiptId: batchId, 
+          subject: `Qualitätsproblem: ${Array.from(qualityTypes).join(', ')} – ${linkedPoId || headerData.lieferscheinNr}`, 
+          status: 'Open', 
+          priority: 'High',
+          messages: qualityMessages
+        });
+      }
+      
+      // CREATE TICKET FOR PARTIAL DELIVERY (OFFEN > 0)
+      if (partialDeliveryIssues.length > 0) {
+        const totalOffen = cart.reduce((sum, c) => sum + getLineCalc(c).offen, 0);
+        onAddTicket({
+          id: crypto.randomUUID(),
+          receiptId: batchId,
+          subject: `Teillieferung – ${linkedPoId || headerData.lieferscheinNr} – Offen: ${totalOffen} Stück`,
+          status: 'Open',
+          priority: 'Normal',
+          messages: [
+            {
+              id: crypto.randomUUID(),
+              author: 'System',
+              text: `Automatisch erstellter Fall (Teillieferung):\n\n${partialDeliveryIssues.join('\n')}\n\nGesamt offen: ${totalOffen} Stück`,
+              timestamp: Date.now(),
+              type: 'system'
+            }
+          ]
+        });
+      }
+      
+      // CREATE TICKET FOR OVERDELIVERY (ZU VIEL > 0)
+      if (overdeliveryIssues.length > 0) {
+        const totalZuViel = cart.reduce((sum, c) => {
+          const calc = getLineCalc(c);
+          return sum + calc.zuViel;
+        }, 0);
+        
+        const overMessages: any[] = [
+          {
+            id: crypto.randomUUID(),
+            author: 'System',
+            text: `Automatisch erstellter Fall (Übermenge):\n\n${overdeliveryIssues.join('\n')}\n\nGesamt zu viel: ${totalZuViel} Stück`,
+            timestamp: Date.now(),
+            type: 'system'
+          }
+        ];
+        
+        // Add return tracking for overdelivery if available
+        const overdeliveryReturns = returnTrackingInfo.filter(info => info.includes('Übermenge'));
+        if (overdeliveryReturns.length > 0) {
+          overMessages.push({
+            id: crypto.randomUUID(),
+            author: 'System',
+            text: `Rücksendung erfasst:\n\n${overdeliveryReturns.join('\n')}`,
+            timestamp: Date.now() + 1,
+            type: 'system'
+          });
+        }
+        
+        onAddTicket({
+          id: crypto.randomUUID(),
+          receiptId: batchId,
+          subject: `Übermenge – ${linkedPoId || headerData.lieferscheinNr} – Zu viel: ${totalZuViel} Stück`,
+          status: 'Open',
+          priority: 'Normal',
+          messages: overMessages
         });
       }
     }
+    
     const clean = cart.map(c => ({ ...c, qty: c.qtyAccepted, isDamaged: c.rejectionReason === 'Damaged' && c.qtyRejected > 0, issueNotes: c.rejectionNotes || c.issueNotes }));
     if (onLogStock) clean.forEach(c => { if (c.qty !== 0) onLogStock(c.item.sku, c.item.name, c.qty > 0 ? 'add' : 'remove', Math.abs(c.qty), `Wareneingang ${headerData.lieferscheinNr}`, 'po-normal'); });
     const created = cart.filter(c => c.qtyAccepted > 0).map(c => c.item).filter(i => !existingItems.find(e => e.id === i.id));
