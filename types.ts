@@ -1,4 +1,3 @@
-
 export interface StockItem {
   id: string;
   name: string;
@@ -93,7 +92,7 @@ export interface PurchaseOrder {
   expectedDeliveryDate?: string;
   items: PurchaseOrderItem[];
   pdfUrl?: string; // URL to the generated or uploaded PDF
-  orderConfirmationUrl?: string; // Link to Order Confirmation (Bestellbestätigung) e.g. SharePoint
+  orderConfirmationUrl?: string; // Link to Order Confirmation (Bestell bestätigung) e.g. SharePoint
   isArchived: boolean; // POs are never deleted, just archived
   linkedReceiptId?: string; // Reference to the Master Receipt
   isForceClosed?: boolean; // Flag to indicate if the order was short-closed (closed with missing items)
