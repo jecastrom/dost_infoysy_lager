@@ -718,7 +718,7 @@ export const GoodsReceiptFlow: React.FC<GoodsReceiptFlowProps> = ({
                         )}
                         {linkedPoId && c.offen > 0 && (
                           <div className={`flex justify-between items-center pt-2 border-t ${isDark ? 'border-slate-700' : 'border-slate-100'}`}>
-                            <span className={`${labelClass} text-amber-500 flex items-center gap-1`}><AlertTriangle size={12}/> Offen</span>
+                            <span className="flex items-center gap-1"><AlertTriangle size={12} className="text-amber-500"/><span className="text-[10px] uppercase font-bold tracking-wider text-amber-500">Offen</span></span>
                             <span className="font-mono text-sm font-bold text-amber-500">{c.offen}</span>
                           </div>
                         )}
