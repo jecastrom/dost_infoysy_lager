@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { ArrowLeft, Calendar, User, Activity, FileText, Briefcase, MousePointer2 } from 'lucide-react';
 import { StockLog, Theme } from '../types';
@@ -91,7 +90,133 @@ export const StockLogView: React.FC<StockLogViewProps> = ({ logs, onBack, theme 
 
         {/* Table Container */}
         <div className={`rounded-2xl border overflow-hidden ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
-            <div className="overflow-x-auto">
+            {/* MOBILE CARD VIEW */}
+            <div className="md:hidden divide-y divide-slate-500/10">
+                {filteredLogs.length === 0 ? (
+                    <div className="p-8 text-center text-slate-500">
+                        <Activity size={32} className="mx-auto mb-3 opacity-30" />
+                        <p className="italic">Keine Protokolleinträge für diesen Filter gefunden.</p>
+                    </div>
+                ) : (
+                    filteredLogs.map(log => {
+                        const isProject = log.context === 'project' || log.context === 'po-project';
+                        
+                        return (
+                            <div
+                                key={log.id}
+                                className={`p-4 transition-colors ${isDark ? 'hover:bg-slate-800/50 active:bg-slate-700' : 'hover:bg-slate-50 active:bg-slate-100'}`}
+                            >
+                                {/* Date & User */}
+                                <div className="flex items-center justify-between mb-3 text-xs">
+                                    <div className={`flex items-center gap-1.5 font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                                        <Calendar size={12} className="opacity-50" />
+                                        {new Date(log.timestamp).toLocaleString('de-DE', { 
+                                            day: '2-digit', 
+                                            month: '2-digit', 
+                                            year: 'numeric', 
+                                            hour: '2-digit', 
+                                            minute: '2-digit' 
+                                        })}
+                                    </div>
+                                    <div className="flex items-center gap-1.5 text-slate-500">
+                                        <User size={12} className="opacity-70" />
+                                        {log.userName}
+                                    </div>
+                                </div>
+
+                                {/* Item Name */}
+                                <div className="mb-3">
+                                    <div className={`font-bold text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
+                                        {log.itemName}
+                                    </div>
+                                    <div className="text-[10px] font-mono opacity-50 mt-0.5">
+                                        {log.itemId}
+                                    </div>
+                                </div>
+
+                                {/* Badges */}
+                                <div className="flex flex-wrap gap-2 mb-3">
+                                    {log.action === 'add' ? (
+                                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border ${isDark ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-emerald-100 border-emerald-200 text-emerald-700'}`}>
+                                            Hinzugefügt
+                                        </span>
+                                    ) : (
+                                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border ${isDark ? 'bg-amber-500/10 border-amber-500/20 text-amber-400' : 'bg-amber-100 border-amber-200 text-amber-700'}`}>
+                                            Entnommen
+                                        </span>
+                                    )}
+                                    
+                                    {(log.context === 'project' || log.context === 'po-project') && (
+                                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold border uppercase tracking-wider ${isDark ? 'bg-blue-500/10 border-blue-500/20 text-blue-400' : 'bg-blue-50 border-blue-200 text-blue-600'}`}>
+                                            <Briefcase size={10} /> PROJEKT
+                                        </span>
+                                    )}
+                                    
+                                    {(log.context === 'manual' || log.source === 'Manuell') && (
+                                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold border uppercase tracking-wider ${isDark ? 'bg-slate-700 border-slate-600 text-slate-300' : 'bg-slate-100 border-slate-200 text-slate-500'}`}>
+                                            <MousePointer2 size={10} /> MANUELL
+                                        </span>
+                                    )}
+                                </div>
+
+                                {/* Info Grid */}
+                                <div className="space-y-2">
+                                    {/* Quantity - Bestand */}
+                                    {!isProject && (
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-xs font-bold uppercase text-slate-500">Bestand</span>
+                                            {log.action === 'add' ? (
+                                                <span className={`font-bold font-mono ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
+                                                    +{log.quantity}
+                                                </span>
+                                            ) : (
+                                                <span className={`font-bold font-mono ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>
+                                                    -{log.quantity}
+                                                </span>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {/* Project Quantity */}
+                                    {isProject && (
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-xs font-bold uppercase text-slate-500">Projekt</span>
+                                            <div className="flex items-center gap-1.5">
+                                                <Briefcase size={14} className={isDark ? 'text-blue-400' : 'text-blue-600'} />
+                                                <span className={`text-lg font-bold font-mono ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
+                                                    {log.quantity}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Reference */}
+                                    {log.source && (
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-xs font-bold uppercase text-slate-500">Referenz</span>
+                                            <div className={`flex items-center gap-1.5 font-mono text-xs ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+                                                <FileText size={12} className="opacity-50" />
+                                                {log.source}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Warehouse */}
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-xs font-bold uppercase text-slate-500">Lager</span>
+                                        <span className="text-xs font-medium opacity-70 px-2 py-1 rounded bg-slate-500/10">
+                                            {log.warehouse}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })
+                )}
+            </div>
+
+            {/* DESKTOP TABLE VIEW */}
+            <div className="hidden md:block overflow-x-auto">
                 <table className="w-full text-left text-sm min-w-[1000px]">
                     <thead className={`border-b ${isDark ? 'bg-slate-950 border-slate-800 text-slate-400' : 'bg-slate-50 border-slate-200 text-slate-500'}`}>
                         <tr>

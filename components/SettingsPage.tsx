@@ -1,4 +1,3 @@
-
 import React, { useRef, useState } from 'react';
 import { Theme, StockItem, RawGermanItem, ActiveModule } from '../types';
 import { Book, ChevronRight, Moon, Sun, Monitor, Shield, Info, Upload, Trash2, Database, AlertCircle, CheckCircle2, Users, Sidebar, LayoutPanelLeft, List, LayoutGrid, Bug, Calendar, Ticket, ToggleLeft, ToggleRight, Ban, AlertTriangle, PlusCircle, ChevronDown, ChevronUp, Globe, Eye, Sparkles } from 'lucide-react';

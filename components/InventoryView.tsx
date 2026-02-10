@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { 
   Search, PlusCircle, Filter, MapPin, PackagePlus, 
@@ -78,7 +77,7 @@ const InventoryProductCard: React.FC<StockComponentProps> = ({ item, onUpdate, o
             <span className={`px-1.5 py-0.5 rounded border transition-colors ${
               isDark ? 'bg-slate-900 border-slate-700 text-slate-500' : 'bg-[#CACCCE]/20 border-[#CACCCE] text-[#86888A]'
             }`}>#{item.sku}</span>
-            <span className="text-[#86888A]">•</span>
+            <span className="text-[#86888A]">â€¢</span>
             <span className={`uppercase ${isDark ? 'text-slate-500' : 'text-[#86888A]'}`}>{item.system}</span>
             
             {/* Smart Copy Tool */}
@@ -132,7 +131,7 @@ const InventoryProductCard: React.FC<StockComponentProps> = ({ item, onUpdate, o
           </span>
         </div>
         <span className={`text-[10px] italic uppercase tracking-tighter text-right ${isDark ? 'text-slate-500' : 'text-[#86888A]'}`}>
-          {item.warehouseLocation || '—'}
+          {item.warehouseLocation || 'â€”'}
         </span>
       </div>
 
@@ -368,7 +367,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
     const headers = [
       "Artikel Bezeichnung",
       "Artikel Nummer",
-      "Kapazität in Ah",
+      "KapazitÃ¤t in Ah",
       "Anzahl",
       "Mindestbestand",
       "System",
@@ -484,7 +483,115 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
           {/* LIST VIEW (TABLE) */}
           {viewMode === 'list' && (
               <div className={`rounded-2xl border overflow-hidden shadow-sm ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-                  <table className="w-full text-left text-sm">
+                  {/* MOBILE CARD VIEW */}
+                  <div className="md:hidden divide-y divide-slate-500/10">
+                      {filteredItems.length === 0 ? (
+                          <div className="p-8 text-center text-slate-500">
+                              <PackagePlus size={32} className="mx-auto mb-3 opacity-30" />
+                              <p>Keine Artikel gefunden</p>
+                          </div>
+                      ) : (
+                          filteredItems.map(item => {
+                              const { bulkInput, setBulkInput, handleClick } = useStockAdjust(item, onUpdate, onLogStock);
+                              const getStockStatus = () => {
+                                  if (item.stockLevel <= 0) return { icon: <AlertOctagon size={16}/>, color: 'text-red-500', bg: 'bg-red-500/10 border-red-500/20' };
+                                  if (item.stockLevel < item.minStock) return { icon: <AlertTriangle size={16}/>, color: 'text-amber-500', bg: 'bg-amber-500/10 border-amber-500/20' };
+                                  return { icon: <CheckCircle2 size={16}/>, color: 'text-emerald-500', bg: 'bg-emerald-500/10 border-emerald-500/20' };
+                              };
+                              const status = getStockStatus();
+
+                              return (
+                                  <div
+                                      key={item.id}
+                                      onClick={() => handleOpenEditItem(item)}
+                                      className={`p-4 cursor-pointer transition-colors ${
+                                          isDark ? 'hover:bg-slate-800 active:bg-slate-700' : 'hover:bg-slate-50 active:bg-slate-100'
+                                      }`}
+                                  >
+                                      {/* Item Name + Manufacturer */}
+                                      <div className="mb-3">
+                                          <div className={`font-bold text-sm mb-1 ${isDark ? 'text-slate-200' : 'text-slate-900'}`}>
+                                              {item.name}
+                                          </div>
+                                          {item.manufacturer && (
+                                              <div className="text-[10px] text-slate-500 uppercase tracking-wide">
+                                                  {item.manufacturer}
+                                              </div>
+                                          )}
+                                      </div>
+
+                                      {/* Info Grid */}
+                                      <div className="space-y-2 mb-3">
+                                          {/* SKU */}
+                                          <div className="flex items-center justify-between">
+                                              <span className="text-xs font-bold uppercase text-slate-500">SKU</span>
+                                              <span className={`font-mono text-xs px-1.5 py-0.5 rounded border ${isDark ? 'bg-slate-900 border-slate-700 text-slate-400' : 'bg-slate-100 border-slate-300 text-slate-600'}`}>
+                                                  {item.sku}
+                                              </span>
+                                          </div>
+
+                                          {/* System */}
+                                          <div className="flex items-center justify-between">
+                                              <span className="text-xs font-bold uppercase text-slate-500">System</span>
+                                              <span className="text-sm text-slate-500">{item.system}</span>
+                                          </div>
+
+                                          {/* Location */}
+                                          <div className="flex items-center justify-between">
+                                              <span className="text-xs font-bold uppercase text-slate-500">Lagerort</span>
+                                              <div className="flex items-center gap-1.5 text-sm text-slate-500">
+                                                  <MapPin size={14} className="opacity-50" />
+                                                  {item.warehouseLocation || '-'}
+                                              </div>
+                                          </div>
+
+                                          {/* Stock Level */}
+                                          <div className="flex items-center justify-between">
+                                              <span className="text-xs font-bold uppercase text-slate-500">Bestand</span>
+                                              <div className={`inline-flex items-center gap-2 px-2.5 py-1 rounded-full border text-xs font-bold ${status.bg} ${status.color}`}>
+                                                  {status.icon}
+                                                  <span>{item.stockLevel}</span>
+                                              </div>
+                                          </div>
+                                      </div>
+
+                                      {/* Actions */}
+                                      <div className="flex items-center gap-2 pt-3 border-t border-slate-200 dark:border-slate-700" onClick={e => e.stopPropagation()}>
+                                          <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-900 p-1 rounded-lg border border-slate-200 dark:border-slate-700 flex-1">
+                                              <input 
+                                                  type="number"
+                                                  value={bulkInput}
+                                                  onChange={(e) => setBulkInput(e.target.value)}
+                                                  placeholder="#"
+                                                  className="w-10 bg-transparent text-center text-sm outline-none font-medium"
+                                              />
+                                              <button onClick={(e) => handleClick(e, -1)} className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-500"><Minus size={14}/></button>
+                                              <button onClick={(e) => handleClick(e, 1)} className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-500"><Plus size={14}/></button>
+                                          </div>
+                                          <button 
+                                              onClick={() => handleCloneItem(item)}
+                                              className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-400 hover:text-[#0077B5]"
+                                              title="Artikel duplizieren"
+                                          >
+                                              <CopyPlus size={16} />
+                                          </button>
+                                          <button 
+                                              onClick={() => handleOpenEditItem(item)}
+                                              className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-400 hover:text-[#0077B5]"
+                                              title="Details bearbeiten"
+                                          >
+                                              <Pencil size={16} />
+                                          </button>
+                                      </div>
+                                  </div>
+                              );
+                          })
+                      )}
+                  </div>
+
+                  {/* DESKTOP TABLE VIEW */}
+                  <div className="hidden md:block">
+                      <table className="w-full text-left text-sm">
                       <thead className={`border-b ${isDark ? 'bg-slate-950 border-slate-800 text-slate-400' : 'bg-slate-50 border-slate-200 text-slate-500'}`}>
                           <tr>
                               <th className="p-4 font-semibold">Artikel</th>
@@ -510,6 +617,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
                           ))}
                       </tbody>
                   </table>
+                  </div>
               </div>
           )}
 

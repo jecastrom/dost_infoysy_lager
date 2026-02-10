@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Theme } from '../types';
 import { 
@@ -371,13 +370,13 @@ export const DocumentationPage: React.FC<DocumentationPageProps> = ({ theme, onB
                                     <div className="flex items-center gap-4">
                                         <div className={`p-4 rounded-xl border flex-1 ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-slate-100 border-slate-200'}`}>
                                             <div className="text-xs font-bold uppercase mb-1 opacity-50">Standard Logik</div>
-                                            <div className="text-red-500 font-bold">10 {lang === 'de' ? 'Bestellt' : 'Ordered'} ≠ 8 {lang === 'de' ? 'Geliefert' : 'Delivered'}</div>
+                                            <div className="text-red-500 font-bold">10 {lang === 'de' ? 'Bestellt' : 'Ordered'} â‰  8 {lang === 'de' ? 'Geliefert' : 'Delivered'}</div>
                                             <div className="text-xs mt-1">Status: <span className="text-amber-500 font-bold">TEILLIEFERUNG</span></div>
                                         </div>
                                         <ArrowRight size={24} className="opacity-30" />
                                         <div className={`p-4 rounded-xl border flex-1 border-purple-500/30 bg-purple-500/10`}>
                                             <div className="text-xs font-bold uppercase mb-1 text-purple-500">Force Close Flag</div>
-                                            <div className="text-emerald-500 font-bold">10 {lang === 'de' ? 'Bestellt' : 'Ordered'} ≈ 8 {lang === 'de' ? 'Geliefert' : 'Delivered'}</div>
+                                            <div className="text-emerald-500 font-bold">10 {lang === 'de' ? 'Bestellt' : 'Ordered'} â‰ˆ 8 {lang === 'de' ? 'Geliefert' : 'Delivered'}</div>
                                             <div className="text-xs mt-1">Status: <span className="text-emerald-500 font-bold">ERLEDIGT</span></div>
                                         </div>
                                     </div>

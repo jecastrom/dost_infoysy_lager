@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { 
@@ -120,7 +119,7 @@ const OrderStatusBadges = ({ order, linkedReceipt, theme }: { order: PurchaseOrd
             <span key="life-over" className={`px-2.5 py-0.5 rounded-md text-[10px] font-bold border uppercase tracking-wider ${
                 isDark ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' : 'bg-orange-50 text-orange-600 border-orange-200'
             }`}>
-                Übermenge
+                Ãœbermenge
             </span>
         );
     }
@@ -128,15 +127,15 @@ const OrderStatusBadges = ({ order, linkedReceipt, theme }: { order: PurchaseOrd
     // --- BADGE 3: RECEIPT PROCESS ---
     if (linkedReceipt) {
         const s = linkedReceipt.status as string;
-        if (s === 'In Prüfung' || s === 'Wartet auf Prüfung') {
+        if (s === 'In PrÃ¼fung' || s === 'Wartet auf PrÃ¼fung') {
             badges.push(
                 <span key="proc-check" className={`px-2.5 py-0.5 rounded-md text-[10px] font-bold border uppercase tracking-wider ${
                     isDark ? 'bg-[#6264A7]/20 text-[#9ea0e6] border-[#6264A7]/40' : 'bg-[#6264A7]/10 text-[#6264A7] border-[#6264A7]/20'
                 }`}>
-                    In Prüfung
+                    In PrÃ¼fung
                 </span>
             );
-        } else if (s === 'Schaden' || s === 'Beschädigt') {
+        } else if (s === 'Schaden' || s === 'BeschÃ¤digt') {
             badges.push(
                 <span key="proc-damage" className={`px-2.5 py-0.5 rounded-md text-[10px] font-bold border uppercase tracking-wider flex items-center gap-1 ${
                     isDark ? 'bg-red-500/10 text-red-400 border-red-500/20' : 'bg-red-50 text-red-600 border-red-200'
@@ -431,7 +430,7 @@ export const OrderManagement: React.FC<OrderManagementProps> = ({
           <div className={`flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar p-1 rounded-xl max-w-full ${isDark ? 'bg-slate-900/50' : 'bg-slate-50'}`}>
                 <FilterChip label="Alle" count={counts.all} active={filterStatus === 'all'} onClick={() => setFilterStatus('all')} type="neutral" />
                 <FilterChip label="Offen" count={counts.open} active={filterStatus === 'open'} onClick={() => setFilterStatus('open')} type="pending" />
-                <FilterChip label="Verspätet" count={counts.late} active={filterStatus === 'late'} onClick={() => setFilterStatus('late')} type="issue" />
+                <FilterChip label="VerspÃ¤tet" count={counts.late} active={filterStatus === 'late'} onClick={() => setFilterStatus('late')} type="issue" />
                 <FilterChip label="Erledigt" count={counts.completed} active={filterStatus === 'completed'} onClick={() => setFilterStatus('completed')} type="success" />
           </div>
           <button onClick={() => setShowArchived(!showArchived)} className={`px-4 py-3 md:py-0 rounded-xl border flex items-center justify-center gap-2 font-bold transition-all whitespace-nowrap ${isDark ? 'bg-slate-900 border-slate-800 hover:bg-slate-800' : 'bg-white border-slate-200 hover:bg-slate-50'} ${showArchived ? 'text-[#0077B5] border-[#0077B5]/30' : (isDark ? 'text-slate-400' : 'text-slate-500')}`}>
@@ -442,7 +441,139 @@ export const OrderManagement: React.FC<OrderManagementProps> = ({
 
       {/* Table */}
       <div className={`rounded-2xl border overflow-hidden ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-         <div className="overflow-x-auto">
+         {/* MOBILE CARD VIEW */}
+         <div className="md:hidden divide-y divide-slate-500/10">
+           {filteredOrders.length === 0 ? (
+             <div className="p-8 text-center text-slate-500">
+               <Truck size={32} className="mx-auto mb-3 opacity-30" />
+               <p>Keine Bestellungen gefunden</p>
+             </div>
+           ) : (
+             filteredOrders.map(order => {
+               const linkedReceipt = receiptMasters.find(r => r.poId === order.id);
+               const isDone = isOrderComplete(order);
+               const totalReceived = order.items.reduce((s, i) => s + i.quantityReceived, 0);
+               const hasLink = !!(order.orderConfirmationUrl || order.pdfUrl);
+               const isMenuOpen = activeMenuId === order.id;
+
+               return (
+                 <div
+                   key={order.id}
+                   onClick={() => setSelectedOrder(order)}
+                   className={`p-4 cursor-pointer transition-colors ${order.isArchived ? (isDark ? 'bg-slate-900/50 text-slate-500 active:bg-slate-800/50' : 'bg-slate-50 text-slate-400 active:bg-slate-100') : (isDark ? 'hover:bg-slate-800 active:bg-slate-700' : 'hover:bg-slate-50 active:bg-slate-100')}`}
+                 >
+                   {/* Order Number */}
+                   <div className="flex items-center justify-between mb-3">
+                     <span className="font-mono font-bold text-[#0077B5] text-lg">{order.id}</span>
+                     <div className="relative">
+                       <button 
+                         onClick={(e) => toggleMenu(order.id, e)}
+                         className={`p-2 rounded-lg transition-colors ${
+                           isMenuOpen 
+                           ? 'bg-[#0077B5] text-white shadow-md' 
+                           : (isDark ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-slate-100 text-slate-500')
+                         }`}
+                       >
+                         <MoreVertical size={18} />
+                       </button>
+                     </div>
+                   </div>
+
+                   {/* Status Badges */}
+                   <div className="flex items-center gap-2 mb-3 flex-wrap">
+                     <OrderStatusBadges order={order} linkedReceipt={linkedReceipt} theme={theme} />
+                   </div>
+
+                   {/* Main Info */}
+                   <div className="space-y-2">
+                     {/* Date */}
+                     <div className="flex items-center justify-between">
+                       <span className="text-xs font-bold uppercase text-slate-500">Datum</span>
+                       <div className="flex flex-col items-end text-xs">
+                         <span className="flex items-center gap-1.5 font-bold">
+                           <Calendar size={12} />
+                           {new Date(order.dateCreated).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                         </span>
+                         {order.expectedDeliveryDate && isOrderLate(order) && (
+                           <span className="text-red-500 font-bold flex items-center gap-1 mt-0.5">
+                             <Clock size={10} /> Fällig: {new Date(order.expectedDeliveryDate).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })}
+                           </span>
+                         )}
+                       </div>
+                     </div>
+
+                     {/* Supplier */}
+                     <div className="flex items-center justify-between">
+                       <span className="text-xs font-bold uppercase text-slate-500">Lieferant</span>
+                       <span className="text-sm flex items-center gap-2">
+                         <Truck size={14} className="text-slate-400"/>
+                         {order.supplier}
+                       </span>
+                     </div>
+
+                     {/* Confirmation */}
+                     {hasLink && (
+                       <div className="flex items-center justify-between">
+                         <span className="text-xs font-bold uppercase text-slate-500">Bestätigung</span>
+                         <CheckCircle2 size={16} className="text-emerald-500" />
+                       </div>
+                     )}
+
+                     {/* Item Count */}
+                     <div className="flex items-center justify-between">
+                       <span className="text-xs font-bold uppercase text-slate-500">Positionen</span>
+                       <span className={`inline-flex items-center justify-center px-2 py-1 rounded-md text-xs font-bold ${isDark ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>
+                         {order.items.length}
+                       </span>
+                     </div>
+                   </div>
+
+                   {/* Chevron */}
+                   <div className="flex justify-end mt-2">
+                     <ChevronRight size={18} className="text-slate-400" />
+                   </div>
+
+                   {/* PORTAL FOR DROPDOWN */}
+                   {isMenuOpen && createPortal(
+                     <div 
+                       style={{ top: menuPos.top, right: menuPos.right }}
+                       className={`fixed z-50 w-56 rounded-xl shadow-xl border p-1 animate-in fade-in zoom-in-95 duration-100 origin-top-right ${
+                         isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'
+                       }`}
+                     >
+                       <div className="flex flex-col gap-0.5">
+                         <MenuItem icon={Eye} label="Details ansehen" onClick={() => { setSelectedOrder(order); setActiveMenuId(null); }} />
+                         
+                         {!order.isArchived && !isDone && order.status !== 'Storniert' && (
+                           <>
+                             <MenuItem icon={ClipboardCheck} label="Wareneingang prüfen" onClick={() => handleReceiveClick(order.id)} />
+                             {!order.linkedReceiptId && (
+                               <MenuItem icon={PackagePlus} label="Schnell-Buchung" onClick={() => handleQuickReceiptClick(order.id)} />
+                             )}
+                             <div className={`h-px my-1 ${isDark ? 'bg-slate-700' : 'bg-slate-100'}`}></div>
+                             <MenuItem icon={Edit2} label="Bearbeiten" onClick={() => handleEditClick(order)} />
+                           </>
+                         )}
+
+                         {!order.isArchived && !isDone && order.status !== 'Storniert' && totalReceived === 0 && (
+                           <MenuItem icon={Ban} label="Stornieren" onClick={() => handleCancelOrderClick(order.id)} danger />
+                         )}
+
+                         {!order.isArchived && (
+                           <MenuItem icon={Archive} label="Archivieren" onClick={() => handleArchiveClick(order.id)} />
+                         )}
+                       </div>
+                     </div>,
+                     document.body
+                   )}
+                 </div>
+               );
+             })
+           )}
+         </div>
+
+         {/* DESKTOP TABLE VIEW */}
+         <div className="hidden md:block overflow-x-auto">
            <table className="w-full text-left text-sm min-w-[800px]">
              <thead className={`border-b ${isDark ? 'bg-slate-950 border-slate-800 text-slate-400' : 'bg-slate-50 border-slate-200 text-slate-500'}`}>
                <tr>
@@ -572,7 +703,7 @@ export const OrderManagement: React.FC<OrderManagementProps> = ({
                         
                         {/* LINK MANAGER SECTION */}
                         <div>
-                            <div className={`text-[10px] uppercase font-bold tracking-wider opacity-60 mb-1.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Bestellbestätigung</div>
+                            <div className={`text-[10px] uppercase font-bold tracking-wider opacity-60 mb-1.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>BestellbestÃ¤tigung</div>
                             
                             {isEditingLink ? (
                                 <div className="flex items-center gap-1">
@@ -606,7 +737,7 @@ export const OrderManagement: React.FC<OrderManagementProps> = ({
                                         title={selectedOrder.orderConfirmationUrl || selectedOrder.pdfUrl}
                                     >
                                         <LinkIcon size={14} className="shrink-0" />
-                                        <span className="truncate">Link öffnen</span>
+                                        <span className="truncate">Link Ã¶ffnen</span>
                                         <ExternalLink size={10} className="opacity-50 shrink-0" />
                                     </a>
                                     
@@ -640,7 +771,7 @@ export const OrderManagement: React.FC<OrderManagementProps> = ({
                                     onClick={handleEditLink}
                                     className={`text-xs flex items-center gap-1.5 transition-colors ${isDark ? 'text-slate-500 hover:text-blue-400' : 'text-slate-400 hover:text-[#0077B5]'}`}
                                 >
-                                    <Plus size={14} /> Link hinzufügen
+                                    <Plus size={14} /> Link hinzufÃ¼gen
                                 </button>
                             )}
                         </div>
@@ -702,7 +833,7 @@ export const OrderManagement: React.FC<OrderManagementProps> = ({
                              <button onClick={() => { setSelectedOrderForReceipt(selectedOrder.id); setConfirmModalOpen(true); }} className={`px-3 py-2 rounded-lg font-bold text-sm flex items-center gap-2 transition-all ${isDark ? 'bg-purple-500/20 text-purple-400 hover:bg-purple-500/30' : 'bg-purple-100 text-purple-700 hover:bg-purple-200'}`} title="Wareneingang vorerfassen"><PackagePlus size={18} /><span className="hidden sm:inline">Erstellen</span></button>
                         )}
                         {!selectedOrder.isArchived && !isOrderComplete(selectedOrder) && selectedOrder.status !== 'Storniert' && (
-                            <button onClick={() => onReceiveGoods(selectedOrder.id)} className={`px-3 py-2 rounded-lg font-bold text-sm flex items-center gap-2 transition-all ${isDark ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30' : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'}`} title="Wareneingang prüfen / buchen"><ClipboardCheck size={18} /><span className="hidden sm:inline">Prüfen</span></button>
+                            <button onClick={() => onReceiveGoods(selectedOrder.id)} className={`px-3 py-2 rounded-lg font-bold text-sm flex items-center gap-2 transition-all ${isDark ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30' : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'}`} title="Wareneingang prüfen / buchen"><ClipboardCheck size={18} /><span className="hidden sm:inline">PrÃ¼fen</span></button>
                         )}
                         {!selectedOrder.isArchived && !isOrderComplete(selectedOrder) && selectedOrder.status !== 'Storniert' ? (
                             <button onClick={() => onEdit(selectedOrder)} className={`px-3 py-2 rounded-lg font-bold text-sm flex items-center gap-2 transition-all ${isDark ? 'bg-blue-500/20 text-blue-400 hover:bg-blue-500/30' : 'bg-blue-100 text-blue-700 hover:bg-blue-200'}`} title="Bestellung bearbeiten"><Pencil size={18} /><span className="hidden sm:inline">Bearbeiten</span></button>
@@ -729,7 +860,7 @@ export const OrderManagement: React.FC<OrderManagementProps> = ({
                             <button onClick={() => { onArchive(selectedOrder.id); setSelectedOrder(null); }} className={`px-3 py-2 rounded-lg font-bold text-sm flex items-center gap-2 transition-all ${isDark ? 'bg-amber-500/10 text-amber-400 hover:bg-amber-500/20' : 'bg-amber-100 text-amber-700 hover:bg-amber-200'}`} title="Archivieren"><Archive size={18} /></button>
                         )}
                     </div>
-                    <button onClick={() => setSelectedOrder(null)} className={`px-6 py-2.5 rounded-xl font-bold transition-colors ${isDark ? 'bg-slate-800 hover:bg-slate-700 text-slate-300' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'}`}>Schließen</button>
+                    <button onClick={() => setSelectedOrder(null)} className={`px-6 py-2.5 rounded-xl font-bold transition-colors ${isDark ? 'bg-slate-800 hover:bg-slate-700 text-slate-300' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'}`}>SchlieÃŸen</button>
                 </div>
             </div>
         </div>,
@@ -742,7 +873,7 @@ export const OrderManagement: React.FC<OrderManagementProps> = ({
             <div className={`relative w-full max-w-sm rounded-2xl shadow-2xl p-6 flex flex-col gap-4 animate-in zoom-in-95 duration-200 ${isDark ? 'bg-slate-900 border border-slate-700' : 'bg-white'}`}>
                 <div className="flex items-center gap-4">
                     <div className={`p-3 rounded-full shrink-0 ${isDark ? 'bg-purple-500/20 text-purple-400' : 'bg-purple-100 text-purple-600'}`}><PackagePlus size={24} /></div>
-                    <div><h3 className={`text-lg font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Wareneingang erstellen?</h3><p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Status wird auf 'Wartet auf Prüfung' gesetzt.</p></div>
+                    <div><h3 className={`text-lg font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Wareneingang erstellen?</h3><p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Status wird auf 'Wartet auf PrÃ¼fung' gesetzt.</p></div>
                 </div>
                 <div className="flex justify-end gap-3 mt-2">
                     <button onClick={handleCancelQuickReceipt} className={`px-4 py-2 rounded-xl font-bold text-sm transition-colors ${isDark ? 'hover:bg-slate-800 text-slate-300' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'}`}>Abbrechen</button>
