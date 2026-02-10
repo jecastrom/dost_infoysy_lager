@@ -1,4 +1,3 @@
-
 import { StockItem, ReceiptHeader, ReceiptItem, ReceiptComment, PurchaseOrder, Ticket, ReceiptMaster } from './types';
 
 // Raw data structure interface matching the JSON provided
