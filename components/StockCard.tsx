@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { StockItem, Theme } from '../types';
 import { Plus, Minus, Hash, PackagePlus, MapPin, Pencil } from 'lucide-react';
@@ -81,7 +80,7 @@ export const StockCard: React.FC<StockCardProps> = ({ item, onUpdate, onAddStock
             </h3>
             <div className={`sm:hidden w-2 h-2 rounded-full ${status.bg.replace('/20', '')}`} />
           </div>
-          <p className={`text-xs truncate ${isDark ? 'text-slate-500' : 'text-[#86888A]'}`}>SKU: {item.sku} • {item.system}</p>
+          <p className={`text-xs truncate ${isDark ? 'text-slate-500' : 'text-[#86888A]'}`}>SKU: {item.sku} â€¢ {item.system}</p>
           <div className={`flex items-center gap-1.5 mt-1 text-[11px] font-medium truncate ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
             <MapPin size={12} className="opacity-70 shrink-0" />
             <span className="truncate">{item.warehouseLocation || 'Kein Lagerort'}</span>
@@ -147,7 +146,7 @@ export const StockCard: React.FC<StockCardProps> = ({ item, onUpdate, onAddStock
             <span className={`px-1.5 py-0.5 rounded border transition-colors ${
               isDark ? 'bg-slate-900 border-slate-700 text-slate-500' : 'bg-[#CACCCE]/20 border-[#CACCCE] text-[#86888A]'
             }`}>#{item.sku}</span>
-            <span className="text-[#86888A]">•</span>
+            <span className="text-[#86888A]">â€¢</span>
             <span className={`uppercase ${isDark ? 'text-slate-500' : 'text-[#86888A]'}`}>{item.system}</span>
           </div>
         </div>
@@ -170,7 +169,7 @@ export const StockCard: React.FC<StockCardProps> = ({ item, onUpdate, onAddStock
           </span>
         </div>
         <span className={`text-[10px] italic uppercase tracking-tighter text-right ${isDark ? 'text-slate-500' : 'text-[#86888A]'}`}>
-          {item.warehouseLocation || '—'}
+          {item.warehouseLocation || 'â€”'}
         </span>
       </div>
 

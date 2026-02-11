@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Sun, Moon, Menu, Package } from 'lucide-react';
 import { Theme } from '../types';

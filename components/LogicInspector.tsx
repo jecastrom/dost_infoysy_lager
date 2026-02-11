@@ -1,4 +1,5 @@
 
+
 import React, { useMemo } from 'react';
 import { ArrowLeft, Database, AlertCircle, Briefcase, CheckCircle2, XCircle, AlertTriangle, Calculator, Layers, FileText } from 'lucide-react';
 import { PurchaseOrder, ReceiptMaster, Theme, Ticket, ReceiptHeader } from '../types';
@@ -90,7 +91,7 @@ export const LogicInspector: React.FC<LogicInspectorProps> = ({ orders, receiptM
 
     // Strict Action (The "In Prüfung" Logic)
     if (master) {
-        if (master.status === 'In Prüfung' || (master.status as string) === 'Wartet auf Prüfung') {
+        if (master.status === 'In Prüfung' || master.status === 'Wartet auf Prüfung') {
              badges.push(<span key="check" className="px-1.5 py-0.5 rounded text-[10px] font-bold border border-[#6264A7]/30 bg-[#6264A7]/10 text-[#6264A7]">IN PRÜFUNG</span>);
         }
         if ((master.status as string) === 'Schaden') {
@@ -130,7 +131,7 @@ export const LogicInspector: React.FC<LogicInspectorProps> = ({ orders, receiptM
     }
 
     // Master Status
-    if (status === 'In Prüfung' || (status as string) === 'Wartet auf Prüfung') {
+    if (status === 'In Prüfung' || status === 'Wartet auf Prüfung') {
         badges.push(<span key="check" className="px-1.5 py-0.5 rounded text-[10px] font-bold border border-[#6264A7]/30 bg-[#6264A7]/10 text-[#6264A7]">IN PRÜFUNG</span>);
     } else if ((status as string) === 'Gebucht' || (status as string) === 'Abgeschlossen') {
         badges.push(<span key="booked" className="px-1.5 py-0.5 rounded text-[10px] font-bold border border-emerald-500/30 bg-emerald-500/10 text-emerald-500">GEBUCHT</span>);

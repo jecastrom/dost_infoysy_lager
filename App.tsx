@@ -1,3 +1,5 @@
+
+
 import React, { useState, useEffect } from 'react';
 import { 
   MOCK_ITEMS, MOCK_RECEIPT_HEADERS, MOCK_RECEIPT_ITEMS, MOCK_COMMENTS, 
@@ -5,7 +7,7 @@ import {
 } from './data';
 import { 
   StockItem, ReceiptHeader, ReceiptItem, ReceiptComment, ViewMode, Theme, 
-  ActiveModule, PurchaseOrder, ReceiptMaster, Ticket, DeliveryLog, StockLog 
+  ActiveModule, PurchaseOrder, ReceiptMaster, Ticket, DeliveryLog, StockLog, ReceiptMasterStatus 
 } from './types';
 import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
@@ -346,7 +348,7 @@ export default function App() {
       bestellNr: po.id,
       lieferdatum: new Date().toISOString().split('T')[0],
       lieferant: po.supplier,
-      status: 'In PrÃ¼fung',
+      status: 'In Prüfung',
       timestamp,
       itemCount: 0,
       warehouseLocation: 'Wareneingang',
@@ -384,7 +386,7 @@ export default function App() {
             return [...prev, {
                 id: `RM-${Date.now()}`,
                 poId,
-                status: 'In PrÃ¼fung' as any, 
+                status: 'In Prüfung', 
                 deliveries: [initialDelivery]
             }];
         }
@@ -485,14 +487,14 @@ export default function App() {
              });
 
              // Apply Logic: Only override if it's not already a critical error status
-             const isErrorStatus = ['Abgelehnt', 'Schaden', 'Schaden + Falsch', 'Falsch geliefert', 'BeschÃ¤digt'].includes(finalReceiptStatus);
+             const isErrorStatus = ['Abgelehnt', 'Schaden', 'Schaden + Falsch', 'Falsch geliefert', 'Beschädigt'].includes(finalReceiptStatus);
              
              if (!isErrorStatus) {
                  if (forceClose) {
                      // FORCE CLOSE: Treat as 'Gebucht' regardless of math
                      finalReceiptStatus = 'Gebucht'; 
                  } else if (totalReceivedIncludingCurrent > totalOrdered) {
-                     finalReceiptStatus = 'Ãœbermenge';
+                     finalReceiptStatus = 'Übermenge'; // Fixed form Ãœbermenge
                  } else if (totalReceivedIncludingCurrent < totalOrdered) {
                      // If we received less than total ordered, it is Partial.
                      finalReceiptStatus = 'Teillieferung';
@@ -583,14 +585,14 @@ export default function App() {
             if (existingMaster) {
                 return prev.map(m => m.id === existingMaster.id ? { 
                     ...m,
-                    status: finalReceiptStatus as any, // Update master status
+                    status: finalReceiptStatus as ReceiptMasterStatus, // Update master status
                     deliveries: [...m.deliveries, newDeliveryLog] 
                 } : m);
             } else {
                 return [...prev, {
                     id: crypto.randomUUID(),
                     poId,
-                    status: finalReceiptStatus as any,
+                    status: finalReceiptStatus as ReceiptMasterStatus,
                     deliveries: [newDeliveryLog]
                 }];
             }
@@ -626,7 +628,7 @@ export default function App() {
         const returnItems = cartItems.filter(c => c.quantityRejected > 0);
         
         const returnMsg = returnItems.map(c => 
-            `RÃ¼cksendung: ${c.quantityRejected}x ${c.item.name} (${c.rejectionReason || 'Sonstiges'}). ` +
+            `Rücksendung: ${c.quantityRejected}x ${c.item.name} (${c.rejectionReason || 'Sonstiges'}). ` +
             (c.returnCarrier ? `Via ${c.returnCarrier} ${c.returnTrackingId ? `(${c.returnTrackingId})` : ''}` : '')
         ).join('\n');
 
@@ -656,7 +658,7 @@ export default function App() {
                      messages: [...ticket.messages, {
                          id: crypto.randomUUID(),
                          author: 'System',
-                         text: `ðŸ“¦ Logistik Update:\n${returnMsg}`,
+                         text: `📦 Logistik Update:\n${returnMsg}`,
                          timestamp: Date.now() + 100, // +100ms to ensure it appears after creation msg
                          type: 'system'
                      }]
@@ -668,10 +670,10 @@ export default function App() {
 
     // --- 6. SIMULATE NOTIFICATION FOR PROJECT COMPLETION ---
     if (isProject && finalReceiptStatus === 'Gebucht') {
-        console.log(`[M365 Mock] Sending email to 'technik-verteiler@dost.de': "Wareneingang fÃ¼r Projekt ${headerData.bestellNr} abgeschlossen. Bereit zur Abholung."`);
+        console.log(`[M365 Mock] Sending email to 'technik-verteiler@dost.de': "Wareneingang für Projekt ${headerData.bestellNr} abgeschlossen. Bereit zur Abholung."`);
         // Visual feedback via setTimeout to allow state to settle or simple alert
         setTimeout(() => {
-            alert("ðŸ“§ Automatische E-Mail an das Technik-Team gesendet (Abholbereit).");
+            alert("📧 Automatische E-Mail an das Technik-Team gesendet (Abholbereit).");
         }, 500);
     }
 
@@ -723,7 +725,7 @@ export default function App() {
           });
       }
 
-      setReceiptHeaders(prev => prev.map(h => h.batchId === batchId ? { ...h, status: 'In PrÃ¼fung' } : h));
+      setReceiptHeaders(prev => prev.map(h => h.batchId === batchId ? { ...h, status: 'In Prüfung' } : h));
       
       if (linkedPO) {
            setPurchaseOrders(prev => prev.map(po => {

@@ -119,7 +119,7 @@ const OrderStatusBadges = ({ order, linkedReceipt, theme }: { order: PurchaseOrd
             <span key="life-over" className={`px-2.5 py-0.5 rounded-md text-[10px] font-bold border uppercase tracking-wider ${
                 isDark ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' : 'bg-orange-50 text-orange-600 border-orange-200'
             }`}>
-                Ãœbermenge
+                Übermenge
             </span>
         );
     }
@@ -127,15 +127,15 @@ const OrderStatusBadges = ({ order, linkedReceipt, theme }: { order: PurchaseOrd
     // --- BADGE 3: RECEIPT PROCESS ---
     if (linkedReceipt) {
         const s = linkedReceipt.status as string;
-        if (s === 'In PrÃ¼fung' || s === 'Wartet auf PrÃ¼fung') {
+        if (s === 'In Prüfung' || s === 'Wartet auf Prüfung') {
             badges.push(
                 <span key="proc-check" className={`px-2.5 py-0.5 rounded-md text-[10px] font-bold border uppercase tracking-wider ${
                     isDark ? 'bg-[#6264A7]/20 text-[#9ea0e6] border-[#6264A7]/40' : 'bg-[#6264A7]/10 text-[#6264A7] border-[#6264A7]/20'
                 }`}>
-                    In PrÃ¼fung
+                    In Prüfung
                 </span>
             );
-        } else if (s === 'Schaden' || s === 'BeschÃ¤digt') {
+        } else if (s === 'Schaden' || s === 'Beschädigt') {
             badges.push(
                 <span key="proc-damage" className={`px-2.5 py-0.5 rounded-md text-[10px] font-bold border uppercase tracking-wider flex items-center gap-1 ${
                     isDark ? 'bg-red-500/10 text-red-400 border-red-500/20' : 'bg-red-50 text-red-600 border-red-200'
@@ -197,7 +197,7 @@ export const OrderManagement: React.FC<OrderManagementProps> = ({
 
   // -- Action Menu State --
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
-  const [menuPos, setMenuPos] = useState({ top: 0, right: 0 });
+  const [menuPos, setMenuPos] = useState<{ top: number; right?: number; left?: number }>({ top: 0, right: 0 });
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -265,18 +265,27 @@ export const OrderManagement: React.FC<OrderManagementProps> = ({
       if (activeMenuId === id) {
           setActiveMenuId(null);
       } else {
-          // Calculate position to ensure it fits (simple right align)
+          // Calculate position to ensure it fits
           const rect = e.currentTarget.getBoundingClientRect();
           const scrollTop = window.scrollY || document.documentElement.scrollTop;
           const scrollLeft = window.scrollX || document.documentElement.scrollLeft;
           
-          setMenuPos({ 
-              top: rect.bottom + scrollTop, 
-              right: document.body.clientWidth - (rect.right + scrollLeft) 
-          });
+          // For modal menu, use left positioning. For table menu, use right positioning
+          if (id === 'modal') {
+              setMenuPos({ 
+                  top: rect.bottom + scrollTop + 4,
+                  left: rect.left + scrollLeft
+              });
+          } else {
+              setMenuPos({ 
+                  top: rect.bottom + scrollTop, 
+                  right: document.body.clientWidth - (rect.right + scrollLeft) 
+              });
+          }
           setActiveMenuId(id);
       }
   };
+
 
   // -- Helper Logic --
   const isOrderLate = (o: PurchaseOrder) => {
@@ -430,7 +439,7 @@ export const OrderManagement: React.FC<OrderManagementProps> = ({
           <div className={`flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar p-1 rounded-xl max-w-full ${isDark ? 'bg-slate-900/50' : 'bg-slate-50'}`}>
                 <FilterChip label="Alle" count={counts.all} active={filterStatus === 'all'} onClick={() => setFilterStatus('all')} type="neutral" />
                 <FilterChip label="Offen" count={counts.open} active={filterStatus === 'open'} onClick={() => setFilterStatus('open')} type="pending" />
-                <FilterChip label="VerspÃ¤tet" count={counts.late} active={filterStatus === 'late'} onClick={() => setFilterStatus('late')} type="issue" />
+                <FilterChip label="Verspätet" count={counts.late} active={filterStatus === 'late'} onClick={() => setFilterStatus('late')} type="issue" />
                 <FilterChip label="Erledigt" count={counts.completed} active={filterStatus === 'completed'} onClick={() => setFilterStatus('completed')} type="success" />
           </div>
           <button onClick={() => setShowArchived(!showArchived)} className={`px-4 py-3 md:py-0 rounded-xl border flex items-center justify-center gap-2 font-bold transition-all whitespace-nowrap ${isDark ? 'bg-slate-900 border-slate-800 hover:bg-slate-800' : 'bg-white border-slate-200 hover:bg-slate-50'} ${showArchived ? 'text-[#0077B5] border-[#0077B5]/30' : (isDark ? 'text-slate-400' : 'text-slate-500')}`}>
@@ -703,7 +712,7 @@ export const OrderManagement: React.FC<OrderManagementProps> = ({
                         
                         {/* LINK MANAGER SECTION */}
                         <div>
-                            <div className={`text-[10px] uppercase font-bold tracking-wider opacity-60 mb-1.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>BestellbestÃ¤tigung</div>
+                            <div className={`text-[10px] uppercase font-bold tracking-wider opacity-60 mb-1.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Bestellbestätigung</div>
                             
                             {isEditingLink ? (
                                 <div className="flex items-center gap-1">
@@ -737,7 +746,7 @@ export const OrderManagement: React.FC<OrderManagementProps> = ({
                                         title={selectedOrder.orderConfirmationUrl || selectedOrder.pdfUrl}
                                     >
                                         <LinkIcon size={14} className="shrink-0" />
-                                        <span className="truncate">Link Ã¶ffnen</span>
+                                        <span className="truncate">Link öffnen</span>
                                         <ExternalLink size={10} className="opacity-50 shrink-0" />
                                     </a>
                                     
@@ -771,7 +780,7 @@ export const OrderManagement: React.FC<OrderManagementProps> = ({
                                     onClick={handleEditLink}
                                     className={`text-xs flex items-center gap-1.5 transition-colors ${isDark ? 'text-slate-500 hover:text-blue-400' : 'text-slate-400 hover:text-[#0077B5]'}`}
                                 >
-                                    <Plus size={14} /> Link hinzufÃ¼gen
+                                    <Plus size={14} /> Link hinzufügen
                                 </button>
                             )}
                         </div>
@@ -826,41 +835,158 @@ export const OrderManagement: React.FC<OrderManagementProps> = ({
                     </table>
                 </div>
 
-                <div className={`p-5 border-t flex justify-between items-center gap-4 ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
-                    <div className="flex items-center gap-2">
-                        {/* Same logic for modal actions */}
-                        {!selectedOrder.isArchived && !isOrderComplete(selectedOrder) && !selectedOrder.linkedReceiptId && selectedOrder.status !== 'Storniert' && (
-                             <button onClick={() => { setSelectedOrderForReceipt(selectedOrder.id); setConfirmModalOpen(true); }} className={`px-3 py-2 rounded-lg font-bold text-sm flex items-center gap-2 transition-all ${isDark ? 'bg-purple-500/20 text-purple-400 hover:bg-purple-500/30' : 'bg-purple-100 text-purple-700 hover:bg-purple-200'}`} title="Wareneingang vorerfassen"><PackagePlus size={18} /><span className="hidden sm:inline">Erstellen</span></button>
-                        )}
+                <div className={`p-5 border-t flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
+                    {/* Left side - Action buttons */}
+                    <div className="flex items-center gap-2 flex-wrap">
+                        {/* PRIMARY ACTION - Prüfen (Most common action) */}
                         {!selectedOrder.isArchived && !isOrderComplete(selectedOrder) && selectedOrder.status !== 'Storniert' && (
-                            <button onClick={() => onReceiveGoods(selectedOrder.id)} className={`px-3 py-2 rounded-lg font-bold text-sm flex items-center gap-2 transition-all ${isDark ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30' : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'}`} title="Wareneingang prüfen / buchen"><ClipboardCheck size={18} /><span className="hidden sm:inline">PrÃ¼fen</span></button>
-                        )}
-                        {!selectedOrder.isArchived && !isOrderComplete(selectedOrder) && selectedOrder.status !== 'Storniert' ? (
-                            <button onClick={() => onEdit(selectedOrder)} className={`px-3 py-2 rounded-lg font-bold text-sm flex items-center gap-2 transition-all ${isDark ? 'bg-blue-500/20 text-blue-400 hover:bg-blue-500/30' : 'bg-blue-100 text-blue-700 hover:bg-blue-200'}`} title="Bestellung bearbeiten"><Pencil size={18} /><span className="hidden sm:inline">Bearbeiten</span></button>
-                        ) : !selectedOrder.isArchived && isOrderComplete(selectedOrder) ? (
-                            <button disabled className="p-2 opacity-30 cursor-not-allowed text-slate-400" title="Bearbeitung gesperrt"><Lock size={18} /></button>
-                        ) : null}
-                        
-                        {/* CANCEL BUTTON IN MODAL */}
-                        {!selectedOrder.isArchived && !isOrderComplete(selectedOrder) && selectedOrder.status !== 'Storniert' && selectedOrder.items.reduce((s, i) => s + i.quantityReceived, 0) === 0 && (
                             <button 
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    onCancelOrder(selectedOrder.id);
-                                }}
-                                className={`px-3 py-2 rounded-lg font-bold text-sm flex items-center gap-2 transition-all ${isDark ? 'bg-red-500/10 text-red-400 hover:bg-red-500/20' : 'bg-red-50 text-red-600 hover:bg-red-100'}`}
-                                title="Bestellung stornieren"
+                                onClick={() => onReceiveGoods(selectedOrder.id)} 
+                                className={`px-6 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 transition-all shadow-lg ${isDark ? 'bg-emerald-600 hover:bg-emerald-500 text-white' : 'bg-emerald-600 hover:bg-emerald-500 text-white'}`}
                             >
-                                <Ban size={18} />
-                                <span className="hidden sm:inline">Stornieren</span>
+                                <ClipboardCheck size={20} />
+                                <span>Prüfen</span>
                             </button>
                         )}
-
-                        {!selectedOrder.isArchived && (
-                            <button onClick={() => { onArchive(selectedOrder.id); setSelectedOrder(null); }} className={`px-3 py-2 rounded-lg font-bold text-sm flex items-center gap-2 transition-all ${isDark ? 'bg-amber-500/10 text-amber-400 hover:bg-amber-500/20' : 'bg-amber-100 text-amber-700 hover:bg-amber-200'}`} title="Archivieren"><Archive size={18} /></button>
-                        )}
+                        
+                        {/* OVERFLOW MENU - Secondary actions */}
+                        <div className="relative">
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setActiveMenuId(activeMenuId === 'modal' ? null : 'modal');
+                                }}
+                                className={`px-4 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 transition-all border ${
+                                    activeMenuId === 'modal'
+                                        ? (isDark ? 'bg-slate-700 border-slate-600' : 'bg-slate-100 border-slate-300')
+                                        : (isDark ? 'border-slate-700 hover:bg-slate-800' : 'border-slate-300 hover:bg-slate-50')
+                                }`}
+                            >
+                                <MoreVertical size={18} />
+                                <span className="hidden sm:inline">Weitere Aktionen</span>
+                            </button>
+                            
+                            {/* OVERFLOW MENU DROPDOWN */}
+                            {activeMenuId === 'modal' && createPortal(
+                                <>
+                                    {/* Backdrop */}
+                                    <div 
+                                        className="fixed inset-0 z-[250]" 
+                                        onClick={() => setActiveMenuId(null)}
+                                    />
+                                    {/* Menu */}
+                                    <div 
+                                        className={`fixed z-[251] w-64 rounded-xl shadow-2xl border p-2 animate-in fade-in zoom-in-95 duration-150 ${
+                                            isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'
+                                        }`}
+                                        style={{
+                                            top: menuPos.top,
+                                            left: menuPos.left,
+                                        }}
+                                    >
+                                        <div className="flex flex-col gap-1">
+                                            {/* Erstellen - Quick Receipt */}
+                                            {!selectedOrder.isArchived && !isOrderComplete(selectedOrder) && !selectedOrder.linkedReceiptId && selectedOrder.status !== 'Storniert' && (
+                                                <button
+                                                    onClick={() => {
+                                                        setSelectedOrderForReceipt(selectedOrder.id);
+                                                        setConfirmModalOpen(true);
+                                                        setActiveMenuId(null);
+                                                    }}
+                                                    className={`w-full px-4 py-3 rounded-lg text-left flex items-center gap-3 transition-colors ${
+                                                        isDark ? 'hover:bg-purple-500/10 text-purple-400' : 'hover:bg-purple-50 text-purple-700'
+                                                    }`}
+                                                >
+                                                    <PackagePlus size={18} />
+                                                    <div className="flex-1">
+                                                        <div className="font-bold text-sm">Erstellen</div>
+                                                        <div className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Wareneingang vorerfassen</div>
+                                                    </div>
+                                                </button>
+                                            )}
+                                            
+                                            {/* Bearbeiten - Edit */}
+                                            {!selectedOrder.isArchived && !isOrderComplete(selectedOrder) && selectedOrder.status !== 'Storniert' && (
+                                                <button
+                                                    onClick={() => {
+                                                        onEdit(selectedOrder);
+                                                        setActiveMenuId(null);
+                                                    }}
+                                                    className={`w-full px-4 py-3 rounded-lg text-left flex items-center gap-3 transition-colors ${
+                                                        isDark ? 'hover:bg-blue-500/10 text-blue-400' : 'hover:bg-blue-50 text-blue-700'
+                                                    }`}
+                                                >
+                                                    <Pencil size={18} />
+                                                    <div className="flex-1">
+                                                        <div className="font-bold text-sm">Bearbeiten</div>
+                                                        <div className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Bestellung ändern</div>
+                                                    </div>
+                                                </button>
+                                            )}
+                                            
+                                            {/* Divider if cancel button will show */}
+                                            {!selectedOrder.isArchived && !isOrderComplete(selectedOrder) && selectedOrder.status !== 'Storniert' && selectedOrder.items.reduce((s, i) => s + i.quantityReceived, 0) === 0 && (
+                                                <div className={`h-px my-1 ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`} />
+                                            )}
+                                            
+                                            {/* Stornieren - Cancel */}
+                                            {!selectedOrder.isArchived && !isOrderComplete(selectedOrder) && selectedOrder.status !== 'Storniert' && selectedOrder.items.reduce((s, i) => s + i.quantityReceived, 0) === 0 && (
+                                                <button
+                                                    onClick={() => {
+                                                        onCancelOrder(selectedOrder.id);
+                                                        setActiveMenuId(null);
+                                                    }}
+                                                    className={`w-full px-4 py-3 rounded-lg text-left flex items-center gap-3 transition-colors ${
+                                                        isDark ? 'hover:bg-red-500/10 text-red-400' : 'hover:bg-red-50 text-red-600'
+                                                    }`}
+                                                >
+                                                    <Ban size={18} />
+                                                    <div className="flex-1">
+                                                        <div className="font-bold text-sm">Stornieren</div>
+                                                        <div className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Bestellung abbrechen</div>
+                                                    </div>
+                                                </button>
+                                            )}
+                                            
+                                            {/* Divider before archive */}
+                                            {!selectedOrder.isArchived && (
+                                                <div className={`h-px my-1 ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`} />
+                                            )}
+                                            
+                                            {/* Archivieren - Archive */}
+                                            {!selectedOrder.isArchived && (
+                                                <button
+                                                    onClick={() => {
+                                                        onArchive(selectedOrder.id);
+                                                        setSelectedOrder(null);
+                                                        setActiveMenuId(null);
+                                                    }}
+                                                    className={`w-full px-4 py-3 rounded-lg text-left flex items-center gap-3 transition-colors ${
+                                                        isDark ? 'hover:bg-amber-500/10 text-amber-400' : 'hover:bg-amber-50 text-amber-700'
+                                                    }`}
+                                                >
+                                                    <Archive size={18} />
+                                                    <div className="flex-1">
+                                                        <div className="font-bold text-sm">Archivieren</div>
+                                                        <div className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>In Archiv verschieben</div>
+                                                    </div>
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                </>,
+                                document.body
+                            )}
+                        </div>
                     </div>
-                    <button onClick={() => setSelectedOrder(null)} className={`px-6 py-2.5 rounded-xl font-bold transition-colors ${isDark ? 'bg-slate-800 hover:bg-slate-700 text-slate-300' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'}`}>SchlieÃŸen</button>
+                    
+                    {/* Right side - Close button */}
+                    <button 
+                        onClick={() => setSelectedOrder(null)} 
+                        className={`px-6 py-2.5 rounded-xl font-bold transition-colors ${isDark ? 'bg-slate-800 hover:bg-slate-700 text-slate-300' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'}`}
+                    >
+                        Schließen
+                    </button>
                 </div>
             </div>
         </div>,
@@ -873,7 +999,7 @@ export const OrderManagement: React.FC<OrderManagementProps> = ({
             <div className={`relative w-full max-w-sm rounded-2xl shadow-2xl p-6 flex flex-col gap-4 animate-in zoom-in-95 duration-200 ${isDark ? 'bg-slate-900 border border-slate-700' : 'bg-white'}`}>
                 <div className="flex items-center gap-4">
                     <div className={`p-3 rounded-full shrink-0 ${isDark ? 'bg-purple-500/20 text-purple-400' : 'bg-purple-100 text-purple-600'}`}><PackagePlus size={24} /></div>
-                    <div><h3 className={`text-lg font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Wareneingang erstellen?</h3><p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Status wird auf 'Wartet auf PrÃ¼fung' gesetzt.</p></div>
+                    <div><h3 className={`text-lg font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Wareneingang erstellen?</h3><p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Status wird auf 'Wartet auf Prüfung' gesetzt.</p></div>
                 </div>
                 <div className="flex justify-end gap-3 mt-2">
                     <button onClick={handleCancelQuickReceipt} className={`px-4 py-2 rounded-xl font-bold text-sm transition-colors ${isDark ? 'hover:bg-slate-800 text-slate-300' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'}`}>Abbrechen</button>

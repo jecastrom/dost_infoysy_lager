@@ -1,3 +1,5 @@
+
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { 
   Search, Filter, Calendar, MapPin, Package, ChevronRight, 
@@ -97,12 +99,12 @@ const ReceiptStatusBadges = ({
     } else if (statusLower === 'übermenge' || statusLower === 'zu viel') {
         badges.push(
             <span key="st-over" className={`px-2.5 py-0.5 rounded-md text-[10px] font-bold border uppercase tracking-wider ${isDark ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' : 'bg-orange-50 text-orange-600 border-orange-200'}`}>
-                Ãœbermenge
+                Übermenge
             </span>
         );
     } else if (statusLower === 'falsch geliefert') {
         badges.push(
-            <span key="st-wrong" className={`px-2.5 py-0.5 rounded-md text-[10px] font-bold border uppercase tracking-wider ${isDark ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : 'bg-amber-50 text-amber-600 border-amber-200'}`}>
+            <span key="st-wrong" className={`px-2.5 py-0.5 rounded-md text-[10px] font-bold border uppercase tracking-wider ${isDark ? 'bg-amber-500/10 text-amber-400 border-amber-500/30' : 'bg-amber-50 text-amber-600 border-amber-200'}`}>
                 Falsch
             </span>
         );
@@ -132,7 +134,7 @@ const ReceiptStatusBadges = ({
     } else if (closedTickets > 0) {
         badges.push(
             <span key="ticket-solved" className={`px-2.5 py-0.5 rounded-md text-[10px] font-bold border flex items-center gap-1 uppercase tracking-wider ${isDark ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-emerald-50 text-emerald-600 border-emerald-200'}`}>
-                <CheckCircle2 size={10} /> Fall gelÂ¶st
+                <CheckCircle2 size={10} /> Fall gelöst
             </span>
         );
     }
@@ -709,12 +711,12 @@ export const ReceiptManagement: React.FC<ReceiptManagementProps> = ({
                 title={inspectionState.label}
             >
                 <ClipboardCheck size={16} />
-                <span className="hidden sm:inline text-xs font-bold">{inspectionState.label === 'Prüfung fortsetzen' ? 'PrÃ¼fen' : 'Ersatz / Nachlieferung'}</span>
+                <span className="hidden sm:inline text-xs font-bold">{inspectionState.label === 'Prüfung fortsetzen' ? 'Prüfen' : 'Ersatz / Nachlieferung'}</span>
             </button>
         )}
 
         {/* RETURN BUTTON (For ANY Issue or Overdelivery) */}
-        {selectedHeader && ['Ãœbermenge', 'Zu viel', 'Schaden', 'BeschÃ¤digt', 'Falsch geliefert', 'Abgelehnt', 'Sonstiges'].some(s => selectedHeader.status.includes(s)) && po && !po.isForceClosed && (
+        {selectedHeader && ['Übermenge', 'Zu viel', 'Schaden', 'Beschädigt', 'Falsch geliefert', 'Abgelehnt', 'Sonstiges'].some(s => selectedHeader.status.includes(s)) && po && !po.isForceClosed && (
              <button
                 onClick={(e) => { e.stopPropagation(); onInspect(po, 'return'); }}
                 className={`px-5 py-3 rounded-xl border flex items-center gap-2.5 font-bold text-sm transition-all shadow-sm ${
@@ -760,7 +762,7 @@ export const ReceiptManagement: React.FC<ReceiptManagementProps> = ({
                  : 'bg-[#0077B5] hover:bg-[#00A0DC] text-white shadow-blue-500/20'
             }`}
           >
-            <ClipboardCheck size={20} /> Lieferung prÃ¼fen
+            <ClipboardCheck size={20} /> Lieferung prüfen
           </button>
         </div>
 
@@ -979,7 +981,7 @@ export const ReceiptManagement: React.FC<ReceiptManagementProps> = ({
                                   <span className="font-bold">{row.bestellNr}</span>
                               </div>
                           ) : (
-                              row.bestellNr || 'ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â'
+                              row.bestellNr || '–'
                           )}
                       </td>
                       <td className="p-4 text-center">
@@ -1102,9 +1104,9 @@ export const ReceiptManagement: React.FC<ReceiptManagementProps> = ({
           <button 
             onClick={handleBack} 
             className={`ml-auto flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${isDark ? 'text-slate-400 hover:bg-slate-800 hover:text-white' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'}`}
-            title="ZurÃ¼ck zur Ãœbersicht"
+            title="Zurück zur Übersicht"
           >
-              <span className="hidden md:inline">SchlieÃŸen</span>
+              <span className="hidden md:inline">Schließen</span>
               <X size={18} />
           </button>
       </div>
@@ -1128,7 +1130,7 @@ export const ReceiptManagement: React.FC<ReceiptManagementProps> = ({
                             <div className="flex items-center gap-2">
                                 <span className={`text-[10px] uppercase font-bold tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Bestellung:</span>
                                 <span className={`text-base font-bold font-mono ${selectedHeader.bestellNr ? (isDark ? 'text-white' : 'text-slate-900') : 'opacity-50 italic font-normal'}`}>
-                                    {selectedHeader.bestellNr || 'ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â'}
+                                    {selectedHeader.bestellNr || '–'}
                                 </span>
                             </div>
 
@@ -1185,7 +1187,7 @@ export const ReceiptManagement: React.FC<ReceiptManagementProps> = ({
                                                             {del.lieferscheinNr}
                                                         </div>
                                                         <div className="text-[10px] opacity-60">
-                                                            {new Date(del.date).toLocaleDateString()} â€¢ {del.items.length} Pos.
+                                                            {new Date(del.date).toLocaleDateString()} • {del.items.length} Pos.
                                                         </div>
                                                     </div>
                                                 </button>
@@ -1220,10 +1222,10 @@ export const ReceiptManagement: React.FC<ReceiptManagementProps> = ({
                     {/* Bottom Row: Metadata */}
                     <div className={`flex flex-wrap items-center gap-x-4 gap-y-1 text-xs mt-2 pt-2 border-t ${isDark ? 'border-slate-800 text-slate-400' : 'border-slate-100 text-slate-500'}`}>
                         <span className="font-medium flex items-center gap-1.5"><Truck size={12} className="text-[#0077B5]" /> {selectedHeader.lieferant}</span>
-                        <span className="hidden sm:inline opacity-30">â€¢</span>
+                        <span className="hidden sm:inline opacity-30">•</span>
                         <span className="flex items-center gap-1"><Calendar size={12}/> {new Date(selectedHeader.timestamp).toLocaleDateString()}</span>
                         <span className="flex items-center gap-1"><MapPin size={12}/> {selectedHeader.warehouseLocation}</span>
-                        <span className="flex items-center gap-1 ml-auto"><User size={12}/> {selectedHeader.createdByName || 'ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â'}</span>
+                        <span className="flex items-center gap-1 ml-auto"><User size={12}/> {selectedHeader.createdByName || '–'}</span>
                     </div>
                 </div>
 
@@ -1268,7 +1270,7 @@ export const ReceiptManagement: React.FC<ReceiptManagementProps> = ({
                                     <div className={`p-4 border-b font-bold flex items-center gap-2 ${
                                         isDark ? 'bg-[#1f2937] border-slate-700 text-slate-200' : 'bg-slate-50 border-slate-300 text-slate-700'
                                     }`}>
-                                        <BarChart3 size={18} className="text-[#0077B5]" /> Bestell-Status (GesamtÃ¼bersicht)
+                                        <BarChart3 size={18} className="text-[#0077B5]" /> Bestell-Status (Gesamtübersicht)
                                     </div>
                                     {/* VERTICAL CARD LAYOUT - NO HORIZONTAL SCROLL */}
                                     <div className="divide-y divide-slate-500/10">
@@ -1327,7 +1329,7 @@ export const ReceiptManagement: React.FC<ReceiptManagementProps> = ({
                                     <div className="space-y-4">
                                         {visibleDeliveries.length === 0 ? (
                                             <div className="p-8 text-center text-slate-500 border border-dashed rounded-xl">
-                                                Noch keine physischen WareneingÃ¤nge verbucht.
+                                                Noch keine physischen Wareneingänge verbucht.
                                             </div>
                                         ) : (
                                             visibleDeliveries.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map((delivery, index) => {
@@ -1367,7 +1369,7 @@ export const ReceiptManagement: React.FC<ReceiptManagementProps> = ({
                                                                         </div>
                                                                         {linkedPO && (
                                                                             <div className="flex items-center gap-2">
-                                                                                <FileText size={12} /> VerknÃ¼pfte Bestellung: {linkedPO.id}
+                                                                                <FileText size={12} /> Verknüpfte Bestellung: {linkedPO.id}
                                                                             </div>
                                                                         )}
                                                                     </div>
@@ -1426,8 +1428,8 @@ export const ReceiptManagement: React.FC<ReceiptManagementProps> = ({
                                                                                 </div>
                                                                                 {(dItem.returnCarrier || dItem.returnTrackingId) && (
                                                                                     <div className={`text-[11px] pl-2 border-l-2 ${isDark ? 'border-slate-600 text-slate-400' : 'border-slate-300 text-slate-500'}`}>
-                                                                                        Rücksendung: {dItem.returnCarrier || 'Ã¢â‚¬â€œ'} Ã¢â‚¬â€œ Tracking: {dItem.returnTrackingId || 'Ã¢â‚¬â€œ'}
-                                                                                        {dItem.rejectionReason && <span> Ã¢â‚¬â€œ Grund: {dItem.rejectionReason}</span>}
+                                                                                        Rücksendung: {dItem.returnCarrier || '–'} – Tracking: {dItem.returnTrackingId || '–'}
+                                                                                        {dItem.rejectionReason && <span> – Grund: {dItem.rejectionReason}</span>}
                                                                                     </div>
                                                                                 )}
                                                                             </div>
@@ -1488,7 +1490,7 @@ export const ReceiptManagement: React.FC<ReceiptManagementProps> = ({
                         
                         <div className="flex-1 overflow-y-auto p-4 space-y-6">
                             {relatedComments.length === 0 ? (
-                            <div className="text-center py-10 text-slate-500 text-sm italic">Keine EintrÃ¤ge vorhanden.</div>
+                            <div className="text-center py-10 text-slate-500 text-sm italic">Keine Einträge vorhanden.</div>
                             ) : (
                             relatedComments.map(c => (
                                 <div key={c.id} className="relative pl-6 border-l border-slate-500/20 last:border-0 pb-2">

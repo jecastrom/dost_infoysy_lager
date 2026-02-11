@@ -1,4 +1,3 @@
-
 import React, { useMemo } from 'react';
 import { StockLog, StockItem, Theme } from '../types';
 import { BatteryCharging, AlertTriangle, TrendingUp, Zap, Activity, BarChart2, ArrowRight, AlertOctagon, CheckCircle } from 'lucide-react';

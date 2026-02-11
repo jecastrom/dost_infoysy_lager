@@ -709,7 +709,7 @@ export const CreateOrderWizard: React.FC<CreateOrderWizardProps> = ({
                                 <input ref={searchInputRef} value={searchTerm} onChange={e => handleSearchChange(e.target.value)} onFocus={() => { if(searchTerm) updateSearchDropdownPosition(); }} placeholder="Artikel suchen..." className={`${inputClass} pl-10 pr-3 py-3`} autoFocus />
                                 {showSearchDropdown && searchResults.length > 0 && createPortal(
                                     <div ref={searchDropdownRef} style={{ position: 'absolute', top: searchDropdownCoords.top + 8, left: searchDropdownCoords.left, width: searchDropdownCoords.width, zIndex: 9999, maxHeight: '400px' }} className={`rounded-xl border shadow-2xl overflow-y-auto animate-in fade-in zoom-in-95 duration-100 ${isDark ? 'bg-[#1e293b] border-slate-600' : 'bg-white border-slate-300'}`}>
-                                        {searchResults.map(item => (<button key={item.id} onClick={() => addToCart(item)} className={`w-full text-left p-4 flex justify-between items-center border-b last:border-0 transition-colors ${isDark ? 'border-slate-700 hover:bg-slate-700 text-slate-200' : 'border-slate-100 hover:bg-slate-50 text-slate-800'}`}><div><div className="font-bold text-base">{item.name}</div><div className="text-sm opacity-70 mt-0.5 flex items-center gap-2"><span>#{item.sku}</span><span className="opacity-50">•</span><span className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${isDark ? 'bg-slate-800 text-slate-400' : 'bg-slate-100 text-slate-600'}`}>{item.system}</span></div></div><div className="bg-[#0077B5]/10 p-2 rounded-full"><Plus size={20} className="text-[#0077B5]" /></div></button>))}
+                                        {searchResults.map(item => (<button key={item.id} onClick={() => addToCart(item)} className={`w-full text-left p-4 flex justify-between items-center border-b last:border-0 transition-colors ${isDark ? 'border-slate-700 hover:bg-slate-700 text-slate-200' : 'border-slate-100 hover:bg-slate-50 text-slate-800'}`}><div><div className="font-bold text-base">{item.name}</div><div className="text-sm opacity-70 mt-0.5 flex items-center gap-2"><span>#{item.sku}</span><span className="opacity-50">â€¢</span><span className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${isDark ? 'bg-slate-800 text-slate-400' : 'bg-slate-100 text-slate-600'}`}>{item.system}</span></div></div><div className="bg-[#0077B5]/10 p-2 rounded-full"><Plus size={20} className="text-[#0077B5]" /></div></button>))}
                                     </div>, document.body
                                 )}
                             </div>
@@ -745,7 +745,7 @@ export const CreateOrderWizard: React.FC<CreateOrderWizardProps> = ({
                                                     </div>
                                                     <div className={`text-xs mt-0.5 flex items-center gap-2 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
                                                         <span className="font-mono">#{line.sku}</span>
-                                                        <span className="opacity-50">•</span>
+                                                        <span className="opacity-50">â€¢</span>
                                                         <span className="uppercase tracking-wider text-[10px] font-bold opacity-80">{line.system}</span>
                                                     </div>
                                                 </td>
@@ -818,7 +818,7 @@ export const CreateOrderWizard: React.FC<CreateOrderWizardProps> = ({
                                     </div>
                                     <div className={`text-xs mt-0.5 flex items-center gap-2 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
                                         <span className="font-mono">#{line.sku}</span>
-                                        <span className="opacity-50">•</span>
+                                        <span className="opacity-50">â€¢</span>
                                         <span className="uppercase tracking-wider text-[10px] font-bold opacity-80">{line.system}</span>
                                     </div>
                                 </div>

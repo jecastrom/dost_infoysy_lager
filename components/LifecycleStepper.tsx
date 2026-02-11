@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { ShoppingCart, Truck, CheckCircle, AlertTriangle } from 'lucide-react';
 import { Theme } from '../types';

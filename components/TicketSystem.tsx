@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { 
@@ -550,7 +549,7 @@ export const TicketSystem: React.FC<TicketSystemProps> = ({
                                                             
                                                             <div className={`flex items-center gap-1 mt-1 text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-400'} ${isMe ? 'mr-1' : 'ml-11'}`}>
                                                                 <span className="font-bold">{msg.author}</span>
-                                                                <span>•</span>
+                                                                <span>â€¢</span>
                                                                 <span className="font-mono">{new Date(msg.timestamp).toLocaleString(undefined, { hour: '2-digit', minute:'2-digit' })}</span>
                                                             </div>
                                                         </div>
