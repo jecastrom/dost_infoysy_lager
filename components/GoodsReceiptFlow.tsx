@@ -12,6 +12,178 @@ import { StockItem, Theme, ReceiptHeader, PurchaseOrder, ReceiptMaster, Ticket }
 import { MOCK_PURCHASE_ORDERS } from '../data';
 import { TicketConfig } from './SettingsPage';
 
+// --- SEARCHABLE DROPDOWN WITH ADD NEW ---
+const SearchableDropdown = ({ 
+  value, 
+  onChange, 
+  options, 
+  onAddNew,
+  placeholder = "Wählen...", 
+  label,
+  isDark = false 
+}: {
+  value: string;
+  onChange: (val: string) => void;
+  options: string[];
+  onAddNew?: (newValue: string) => void;
+  placeholder?: string;
+  label?: string;
+  isDark?: boolean;
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showAddNew, setShowAddNew] = useState(false);
+  const [newItemInput, setNewItemInput] = useState('');
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const filteredOptions = useMemo(() => {
+    if (!searchTerm) return options;
+    return options.filter(opt => opt.toLowerCase().includes(searchTerm.toLowerCase()));
+  }, [options, searchTerm]);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+        setSearchTerm('');
+        setShowAddNew(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleSelect = (opt: string) => {
+    onChange(opt);
+    setIsOpen(false);
+    setSearchTerm('');
+    setShowAddNew(false);
+  };
+
+  const handleAddNew = () => {
+    if (newItemInput.trim() && onAddNew) {
+      onAddNew(newItemInput.trim());
+      onChange(newItemInput.trim());
+      setNewItemInput('');
+      setShowAddNew(false);
+      setIsOpen(false);
+      setSearchTerm('');
+    }
+  };
+
+  return (
+    <div ref={dropdownRef} className="relative">
+      {label && <label className={`text-sm font-bold block mb-2 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{label}</label>}
+      
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className={`w-full px-4 py-3 rounded-xl border flex items-center justify-between transition-all ${
+          isDark 
+            ? 'bg-slate-900 border-slate-700 text-white hover:border-slate-600' 
+            : 'bg-white border-slate-300 hover:border-slate-400'
+        } ${isOpen ? 'ring-2 ring-blue-500/20' : ''}`}
+      >
+        <span className={value ? '' : 'opacity-50'}>{value || placeholder}</span>
+        <ChevronDown size={18} className={`transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+
+      {isOpen && (
+        <div className={`absolute z-50 mt-2 w-full rounded-xl border shadow-2xl max-h-[300px] overflow-hidden flex flex-col ${
+          isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'
+        }`}>
+          {/* Search */}
+          <div className={`p-3 border-b ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
+            <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
+              <Search size={16} className="opacity-50" />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Suchen..."
+                className="flex-1 bg-transparent outline-none text-sm"
+                autoFocus
+              />
+            </div>
+          </div>
+
+          {/* Options List */}
+          <div className="flex-1 overflow-y-auto">
+            {filteredOptions.length > 0 ? (
+              filteredOptions.map((opt, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => handleSelect(opt)}
+                  className={`w-full px-4 py-2.5 text-left text-sm transition-colors flex items-center justify-between ${
+                    value === opt 
+                      ? isDark ? 'bg-blue-500/20 text-blue-400' : 'bg-blue-50 text-blue-600'
+                      : isDark ? 'hover:bg-slate-800' : 'hover:bg-slate-50'
+                  }`}
+                >
+                  <span>{opt}</span>
+                  {value === opt && <Check size={16} />}
+                </button>
+              ))
+            ) : (
+              <div className="p-4 text-center text-sm opacity-50">Keine Ergebnisse</div>
+            )}
+          </div>
+
+          {/* Add New Button */}
+          {onAddNew && !showAddNew && (
+            <button
+              type="button"
+              onClick={() => setShowAddNew(true)}
+              className={`p-3 border-t flex items-center justify-center gap-2 text-sm font-bold transition-colors ${
+                isDark 
+                  ? 'border-slate-700 hover:bg-slate-800 text-blue-400' 
+                  : 'border-slate-200 hover:bg-slate-50 text-blue-600'
+              }`}
+            >
+              <Plus size={16} /> Neuen Lagerort hinzufügen
+            </button>
+          )}
+
+          {/* Add New Input */}
+          {showAddNew && (
+            <div className={`p-3 border-t ${isDark ? 'border-slate-700 bg-slate-800' : 'border-slate-200 bg-slate-50'}`}>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={newItemInput}
+                  onChange={(e) => setNewItemInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleAddNew()}
+                  placeholder="Neuer Lagerort..."
+                  className={`flex-1 px-3 py-2 rounded-lg border text-sm outline-none ${
+                    isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-300'
+                  }`}
+                  autoFocus
+                />
+                <button
+                  type="button"
+                  onClick={handleAddNew}
+                  disabled={!newItemInput.trim()}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold disabled:opacity-50 hover:bg-blue-500"
+                >
+                  <Check size={16} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {setShowAddNew(false); setNewItemInput('');}}
+                  className={`px-3 py-2 rounded-lg text-sm ${isDark ? 'hover:bg-slate-700' : 'hover:bg-slate-200'}`}
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const LAGERORT_OPTIONS: string[] = [
   "Akku Service","Brandt, Service, B DI 446E","Dallmann, Service","EKZFK","GERAS","HaB","HAB",
   "HaB Altbestand Kunde","HLU","HTW","KEH","Kitas","Koplin, Service, B DI 243","KWF",
@@ -230,6 +402,7 @@ export const GoodsReceiptFlow: React.FC<GoodsReceiptFlowProps> = ({
 
   const [cart, setCart] = useState<CartItem[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [lagerortOptions, setLagerortOptions] = useState<string[]>(LAGERORT_OPTIONS);
   const [returnPopup, setReturnPopup] = useState<ReturnPopupData | null>(null);
   const [cardIdx, setCardIdx] = useState(0);
 
@@ -659,13 +832,14 @@ export const GoodsReceiptFlow: React.FC<GoodsReceiptFlowProps> = ({
               </div>
             )}
 
-            <div>
-              <label className={`${labelClass} mb-2 block`}>Lagerort</label>
-              <select value={headerData.warehouseLocation} onChange={e => setHeaderData(prev => ({...prev, warehouseLocation: e.target.value}))} className={inputClass}>
-                <option value="">WÃ¤hlen...</option>
-                {LAGERORT_OPTIONS.map(loc => <option key={loc} value={loc}>{loc}</option>)}
-              </select>
-            </div>
+            <SearchableDropdown
+  value={headerData.warehouseLocation}
+  onChange={(val) => setHeaderData(prev => ({...prev, warehouseLocation: val}))}
+  options={lagerortOptions}
+  onAddNew={(newLoc) => setLagerortOptions(prev => [...prev, newLoc])}
+  label="Lagerort"
+  isDark={isDark}
+/>
 
             <div className={`p-4 rounded-xl border ${isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
               <div className="flex items-center justify-between mb-3">

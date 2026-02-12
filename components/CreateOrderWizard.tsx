@@ -37,7 +37,268 @@ interface OrderFormData {
   expectedDeliveryDate: string;
   poType: 'normal' | 'project' | null;
 }
+// --- SEARCHABLE DROPDOWN WITH ADD NEW ---
+const SearchableDropdown = ({ 
+  value, 
+  onChange, 
+  options, 
+  onAddNew,
+  placeholder = "Wählen...", 
+  label,
+  isDark = false 
+}: {
+  value: string;
+  onChange: (val: string) => void;
+  options: string[];
+  onAddNew?: (newValue: string) => void;
+  placeholder?: string;
+  label?: string;
+  isDark?: boolean;
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showAddNew, setShowAddNew] = useState(false);
+  const [newItemInput, setNewItemInput] = useState('');
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
+  const filteredOptions = useMemo(() => {
+    if (!searchTerm) return options;
+    return options.filter(opt => opt.toLowerCase().includes(searchTerm.toLowerCase()));
+  }, [options, searchTerm]);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+        setSearchTerm('');
+        setShowAddNew(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleSelect = (opt: string) => {
+    onChange(opt);
+    setIsOpen(false);
+    setSearchTerm('');
+    setShowAddNew(false);
+  };
+
+  const handleAddNew = () => {
+    if (newItemInput.trim() && onAddNew) {
+      onAddNew(newItemInput.trim());
+      onChange(newItemInput.trim());
+      setNewItemInput('');
+      setShowAddNew(false);
+      setIsOpen(false);
+      setSearchTerm('');
+    }
+  };
+
+  return (
+    <div ref={dropdownRef} className="relative">
+      {label && <label className={`text-sm font-bold block mb-2 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{label}</label>}
+      
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className={`w-full px-4 py-3 rounded-xl border flex items-center justify-between transition-all ${
+          isDark 
+            ? 'bg-slate-900 border-slate-700 text-white hover:border-slate-600' 
+            : 'bg-white border-slate-300 hover:border-slate-400'
+        } ${isOpen ? 'ring-2 ring-blue-500/20' : ''}`}
+      >
+        <span className={value ? '' : 'opacity-50'}>{value || placeholder}</span>
+        <ChevronDown size={18} className={`transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+
+      {isOpen && (
+        <div className={`absolute z-50 mt-2 w-full rounded-xl border shadow-2xl max-h-[300px] overflow-hidden flex flex-col ${
+          isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'
+        }`}>
+          <div className={`p-3 border-b ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
+            <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
+              <Search size={16} className="opacity-50" />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Suchen..."
+                className="flex-1 bg-transparent outline-none text-sm"
+                autoFocus
+              />
+            </div>
+          </div>
+
+          <div className="flex-1 overflow-y-auto">
+            {filteredOptions.length > 0 ? (
+              filteredOptions.map((opt, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => handleSelect(opt)}
+                  className={`w-full px-4 py-2.5 text-left text-sm transition-colors flex items-center justify-between ${
+                    value === opt 
+                      ? isDark ? 'bg-blue-500/20 text-blue-400' : 'bg-blue-50 text-blue-600'
+                      : isDark ? 'hover:bg-slate-800' : 'hover:bg-slate-50'
+                  }`}
+                >
+                  <span>{opt}</span>
+                  {value === opt && <CheckCircle2 size={16} />}
+                </button>
+              ))
+            ) : (
+              <div className="p-4 text-center text-sm opacity-50">Keine Ergebnisse</div>
+            )}
+          </div>
+
+          {onAddNew && !showAddNew && (
+            <button
+              type="button"
+              onClick={() => setShowAddNew(true)}
+              className={`p-3 border-t flex items-center justify-center gap-2 text-sm font-bold transition-colors ${
+                isDark 
+                  ? 'border-slate-700 hover:bg-slate-800 text-blue-400' 
+                  : 'border-slate-200 hover:bg-slate-50 text-blue-600'
+              }`}
+            >
+              <Plus size={16} /> Neuen Lieferanten hinzufügen
+            </button>
+          )}
+
+          {showAddNew && (
+            <div className={`p-3 border-t ${isDark ? 'border-slate-700 bg-slate-800' : 'border-slate-200 bg-slate-50'}`}>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={newItemInput}
+                  onChange={(e) => setNewItemInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleAddNew()}
+                  placeholder="Neuer Lieferant..."
+                  className={`flex-1 px-3 py-2 rounded-lg border text-sm outline-none ${
+                    isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-300'
+                  }`}
+                  autoFocus
+                />
+                <button
+                  type="button"
+                  onClick={handleAddNew}
+                  disabled={!newItemInput.trim()}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold disabled:opacity-50 hover:bg-blue-500"
+                >
+                  <CheckCircle2 size={16} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {setShowAddNew(false); setNewItemInput('');}}
+                  className={`px-3 py-2 rounded-lg text-sm ${isDark ? 'hover:bg-slate-700' : 'hover:bg-slate-200'}`}
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+// --- PLUS/MINUS PICKER (Deutsche Post Style) ---
+const PlusMinusPicker = ({ value, onChange, min = 0, max = 999, disabled = false, isDark = false }: {
+  value: number; onChange: (v: number) => void; min?: number; max?: number; disabled?: boolean; isDark?: boolean;
+}) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [tempValue, setTempValue] = useState(String(value));
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const inc = () => { if (!disabled && value < max) onChange(value + 1); };
+  const dec = () => { if (!disabled && value > min) onChange(value - 1); };
+  
+  const handleNumberClick = () => {
+    if (disabled) return;
+    setIsEditing(true);
+    setTempValue(String(value));
+    setTimeout(() => inputRef.current?.focus(), 10);
+  };
+
+  const handleBlur = () => {
+    setIsEditing(false);
+    const parsed = parseInt(tempValue) || 0;
+    const clamped = Math.max(min, Math.min(max, parsed));
+    onChange(clamped);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleBlur();
+    }
+  };
+
+  return (
+    <div className={`flex items-center gap-1 select-none ${disabled ? 'opacity-40 pointer-events-none' : ''}`}>
+      {/* MINUS BUTTON - RED */}
+      <button 
+        onClick={dec} 
+        disabled={disabled || value <= min}
+        className={`min-w-[48px] min-h-[48px] flex items-center justify-center rounded-lg font-bold text-white text-2xl active:scale-95 transition-all ${
+          disabled || value <= min 
+            ? 'bg-gray-400 cursor-not-allowed' 
+            : 'bg-red-600 hover:bg-red-500 active:bg-red-700'
+        }`}
+      >
+        −
+      </button>
+
+      {/* NUMBER - TAPPABLE */}
+      <div className="relative">
+        {isEditing ? (
+          <input
+            ref={inputRef}
+            type="number"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            value={tempValue}
+            onChange={e => setTempValue(e.target.value)}
+            onBlur={handleBlur}
+            onKeyDown={handleKeyDown}
+            className={`w-20 h-12 text-center text-2xl font-bold font-mono rounded-lg border-2 ${
+              isDark 
+                ? 'bg-slate-900 border-blue-500 text-white' 
+                : 'bg-white border-blue-500 text-slate-900'
+            }`}
+            style={{ appearance: 'none', MozAppearance: 'textfield' }}
+          />
+        ) : (
+          <button
+            onClick={handleNumberClick}
+            disabled={disabled}
+            className={`w-20 h-12 flex items-center justify-center text-2xl font-bold font-mono rounded-lg border-2 transition-all ${
+              isDark 
+                ? 'bg-slate-900 border-slate-600 text-white hover:border-slate-500' 
+                : 'bg-white border-slate-300 text-slate-900 hover:border-slate-400'
+            }`}
+          >
+            {value}
+          </button>
+        )}
+      </div>
+
+      {/* PLUS BUTTON - GREEN */}
+      <button 
+        onClick={inc} 
+        disabled={disabled || value >= max}
+        className={`min-w-[48px] min-h-[48px] flex items-center justify-center rounded-lg font-bold text-white text-2xl active:scale-95 transition-all ${
+          disabled || value >= max 
+            ? 'bg-gray-400 cursor-not-allowed' 
+            : 'bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700'
+        }`}
+      >
+        +
+      </button>
+    </div>
+  );
+};
 // --- UTILS: SMART PARSER ---
 const cleanSku = (sku: string) => sku.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
 
@@ -144,7 +405,19 @@ const parsePOText = (text: string, inventory: StockItem[]) => {
       items: parsedItems
   };
 };
-
+// Supplier options for dropdown
+const SUPPLIER_OPTIONS = [
+  "Battery Kutter", 
+  "Energy Solutions", 
+  "Power Supply GmbH", 
+  "Akku-Tech", 
+  "Deutsche Batterie", 
+  "Euro Power Systems",
+  "Varta AG",
+  "Bosch Automotive",
+  "Continental",
+  "Siemens Energy"
+];
 export const CreateOrderWizard: React.FC<CreateOrderWizardProps> = ({ 
   theme, 
   items, 
@@ -168,6 +441,7 @@ export const CreateOrderWizard: React.FC<CreateOrderWizardProps> = ({
   });
 
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [supplierOptions, setSupplierOptions] = useState<string[]>(SUPPLIER_OPTIONS);
 
   // -- Initialize from Prop (Edit Mode) --
   useEffect(() => {
@@ -639,32 +913,46 @@ export const CreateOrderWizard: React.FC<CreateOrderWizardProps> = ({
                             </div>
                         </div>
 
-                        <div className="space-y-1 relative group">
-                            <label className="text-xs font-medium opacity-70">Lieferant <span className="text-red-500">*</span></label>
-                            <div className="relative" ref={supplierInputRef}>
-                                <Truck className="absolute left-3 top-1/2 -translate-y-1/2 opacity-50" size={16} />
-                                <input value={formData.supplier} onChange={e => { setFormData({...formData, supplier: e.target.value}); updateSupplierDropdownPosition(); }} onFocus={updateSupplierDropdownPosition} className={`${inputClass} pl-10 pr-8`} placeholder="Lieferant suchen oder eingeben..." />
-                                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 opacity-30 pointer-events-none" size={16} />
-                                {showSupplierDropdown && filteredSuppliers.length > 0 && createPortal(
-                                    <div ref={supplierDropdownRef} style={{ position: 'absolute', top: supplierDropdownCoords.top + 4, left: supplierDropdownCoords.left, width: supplierDropdownCoords.width, zIndex: 99999, maxHeight: '250px' }} className={`rounded-xl border shadow-xl overflow-y-auto animate-in fade-in zoom-in-95 duration-100 ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
-                                        {filteredSuppliers.map(s => (
-                                            <button key={s} onClick={() => { setFormData({...formData, supplier: s}); setShowSupplierDropdown(false); }} className={`w-full text-left px-4 py-3 text-sm transition-all flex items-center justify-between group/item ${isDark ? 'hover:bg-slate-800 text-slate-200 border-b border-slate-800 last:border-0' : 'hover:bg-slate-50 text-slate-700 border-b border-slate-50 last:border-0'}`}><span>{s}</span></button>
-                                        ))}
-                                    </div>, document.body
-                                )}
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-1">
-                                <label className="text-xs font-medium opacity-70">Bestelldatum <span className="text-red-500">*</span></label>
-                                <div className="relative"><Calendar className="absolute left-3 top-1/2 -translate-y-1/2 opacity-50 pointer-events-none" size={16} /><input type="date" value={formData.orderDate} onChange={e => setFormData({...formData, orderDate: e.target.value})} className={`${inputClass} pl-10`} style={{ colorScheme: isDark ? 'dark' : 'light' }} /></div>
-                            </div>
-                            <div className="space-y-1">
-                                <label className="text-xs font-medium opacity-70">Geplanter Liefertermin {requireDeliveryDate ? <span className="text-red-500 ml-1">*</span> : <span className="opacity-50 ml-1 font-normal">(Optional)</span>}</label>
-                                <div className="relative"><Clock className="absolute left-3 top-1/2 -translate-y-1/2 opacity-50 pointer-events-none" size={16} /><input type="date" value={formData.expectedDeliveryDate} onChange={e => setFormData({...formData, expectedDeliveryDate: e.target.value})} className={`${inputClass} pl-10`} required={requireDeliveryDate} style={{ colorScheme: isDark ? 'dark' : 'light' }} /></div>
-                            </div>
-                        </div>
+                        <SearchableDropdown
+  value={formData.supplier}
+  onChange={(val) => setFormData({...formData, supplier: val})}
+  options={supplierOptions}
+  onAddNew={(newSup) => setSupplierOptions(prev => [...prev, newSup])}
+  label="Lieferant *"
+  placeholder="Lieferant wählen..."
+  isDark={isDark}
+/>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div className="space-y-1">
+        <label className="text-xs font-medium opacity-70">Bestelldatum <span className="text-red-500">*</span></label>
+        <div className="relative">
+            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 opacity-50 pointer-events-none" size={16} />
+            <input 
+                type="date" 
+                value={formData.orderDate} 
+                onChange={e => setFormData({...formData, orderDate: e.target.value})} 
+                className={`${inputClass} pl-10 text-base`} 
+                style={{ colorScheme: isDark ? 'dark' : 'light' }} 
+            />
+        </div>
+    </div>
+    <div className="space-y-1">
+        <label className="text-xs font-medium opacity-70">
+            Geplanter Liefertermin {requireDeliveryDate ? <span className="text-red-500 ml-1">*</span> : <span className="opacity-50 ml-1 font-normal">(Optional)</span>}
+        </label>
+        <div className="relative">
+            <Clock className="absolute left-3 top-1/2 -translate-y-1/2 opacity-50 pointer-events-none" size={16} />
+            <input 
+                type="date" 
+                value={formData.expectedDeliveryDate} 
+                onChange={e => setFormData({...formData, expectedDeliveryDate: e.target.value})} 
+                className={`${inputClass} pl-10 text-base`} 
+                required={requireDeliveryDate} 
+                style={{ colorScheme: isDark ? 'dark' : 'light' }} 
+            />
+        </div>
+    </div>
+</div>
                     </div>
                 </div>
             )}
@@ -749,16 +1037,18 @@ export const CreateOrderWizard: React.FC<CreateOrderWizardProps> = ({
                                                         <span className="uppercase tracking-wider text-[10px] font-bold opacity-80">{line.system}</span>
                                                     </div>
                                                 </td>
-                                                <td className="px-4 py-3 text-center">
-                                                    <input 
-                                                        type="number"
-                                                        min="1"
-                                                        value={line.quantity}
-                                                        disabled={isDeleted}
-                                                        onChange={e => updateCartQty(idx, parseInt(e.target.value) || 1)}
-                                                        className={`w-24 px-2 py-1.5 rounded border text-center font-bold outline-none focus:ring-2 ${isDark ? 'bg-slate-950 border-slate-700 focus:ring-blue-500/30 text-white' : 'bg-white border-slate-300 focus:ring-[#0077B5]/20 text-slate-900'} ${isDeleted ? 'cursor-not-allowed opacity-50' : ''}`}
-                                                    />
-                                                </td>
+                                                <td className="px-4 py-3">
+    <div className="flex justify-center">
+        <PlusMinusPicker
+            value={line.quantity}
+            onChange={(val) => updateCartQty(idx, val)}
+            min={1}
+            max={9999}
+            disabled={isDeleted}
+            isDark={isDark}
+        />
+    </div>
+</td>
                                                 <td className="px-4 py-3 text-center">
                                                     {isDeleted ? (
                                                         <button 

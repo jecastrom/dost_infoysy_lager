@@ -793,48 +793,129 @@ export const OrderManagement: React.FC<OrderManagementProps> = ({
                 </div>
                 
                 <div className="flex-1 overflow-y-auto p-0">
-                    <table className="w-full text-left text-sm">
-                        <thead className={`sticky top-0 z-10 ${isDark ? 'bg-slate-950 text-slate-400' : 'bg-slate-50 text-slate-500'}`}>
-                            <tr>
-                                <th className="px-6 py-3 font-semibold">Artikel</th>
-                                <th className="px-6 py-3 font-semibold w-24 text-center">Bestellt</th>
-                                <th className="px-6 py-3 font-semibold w-24 text-center">Geliefert</th>
-                                <th className="px-6 py-3 font-semibold w-24 text-center">Offen</th>
-                                <th className="px-6 py-3 font-semibold w-20 text-center">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody className={`divide-y ${isDark ? 'divide-slate-800' : 'divide-slate-100'}`}>
-                            {selectedOrder.items.map((item, idx) => {
-                                const stockItem = MOCK_ITEMS.find(si => si.sku === item.sku);
-                                const systemInfo = stockItem?.system || 'Material';
-                                const isClosed = selectedOrder.isForceClosed;
-                                const isShort = item.quantityReceived < item.quantityExpected;
-                                const isPerfect = item.quantityReceived === item.quantityExpected;
-                                const isOver = item.quantityReceived > item.quantityExpected;
-                                const rawOpen = Math.max(0, item.quantityExpected - item.quantityReceived);
+    {/* MOBILE VIEW - Cards */}
+    <div className="lg:hidden divide-y divide-slate-500/10">
+        {selectedOrder.items.map((item, idx) => {
+            const stockItem = MOCK_ITEMS.find(si => si.sku === item.sku);
+            const systemInfo = stockItem?.system || 'Material';
+            const isClosed = selectedOrder.isForceClosed;
+            const isShort = item.quantityReceived < item.quantityExpected;
+            const isPerfect = item.quantityReceived === item.quantityExpected;
+            const isOver = item.quantityReceived > item.quantityExpected;
+            const rawOpen = Math.max(0, item.quantityExpected - item.quantityReceived);
 
-                                return (
-                                <tr key={idx} className={isDark ? 'hover:bg-slate-800/50' : 'hover:bg-slate-50'}>
-                                    <td className="px-6 py-4">
-                                        <div className={`font-bold text-sm mb-1 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{item.name}</div>
-                                        <div className="flex flex-wrap items-center gap-y-1 gap-x-3">
-                                            <div className={`text-xs flex items-center gap-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}><span className="opacity-70">Artikelnummer:</span><span className="font-mono text-xs">{item.sku}</span></div>
-                                            <span className={`px-1.5 py-0.5 rounded-[4px] text-[10px] font-bold uppercase tracking-wider border ${isDark ? 'bg-slate-800 text-slate-400 border-slate-700' : 'bg-slate-100 text-slate-600 border-slate-200'}`}>{systemInfo}</span>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4 text-center font-bold">{item.quantityExpected}</td>
-                                    <td className="px-6 py-4 text-center"><span className={`font-bold ${item.quantityReceived === item.quantityExpected ? 'text-emerald-500' : item.quantityReceived > item.quantityExpected ? 'text-orange-500' : item.quantityReceived > 0 ? 'text-amber-500' : 'text-slate-400'}`}>{item.quantityReceived}</span></td>
-                                    <td className="px-6 py-4 text-center font-medium">
-                                        {isShort ? (isClosed ? <span className="text-slate-400 decoration-slate-400 line-through" title="Restmenge storniert">{rawOpen}</span> : <span className="text-amber-500 font-bold">{rawOpen}</span>) : "-"}
-                                    </td>
-                                    <td className="px-6 py-4 text-center flex justify-center items-center">
-                                        {isPerfect ? <CheckCircle2 className="text-emerald-500" size={18} /> : isOver ? <Info className="text-orange-500" size={18} /> : isShort ? (isClosed ? <div className="group relative flex justify-center cursor-help" title="Manuell abgeschlossen"><CheckCircle2 className="text-slate-400" size={18} /></div> : <AlertTriangle className="text-amber-500" size={18} />) : <span className="text-slate-300">-</span>}
-                                    </td>
-                                </tr>
-                            )})}
-                        </tbody>
-                    </table>
+            return (
+                <div key={idx} className="p-4 space-y-3">
+                    <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                            <div className="font-bold text-sm truncate">{item.name}</div>
+                            <div className="text-[10px] font-mono opacity-50 mt-0.5">{item.sku}</div>
+                            {systemInfo && (
+                                <div className="text-[10px] opacity-40 mt-0.5">System: {systemInfo}</div>
+                            )}
+                            {item.isDeleted && (
+                                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[9px] font-bold bg-red-500/10 text-red-500 border border-red-500/20 mt-1">
+                                    <X size={10} /> Gelöscht
+                                </span>
+                            )}
+                            {item.isAddedLater && (
+                                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[9px] font-bold bg-amber-500/10 text-amber-500 border border-amber-500/20 mt-1">
+                                    <Plus size={10} /> Nachträglich
+                                </span>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                        <div className="flex justify-between">
+                            <span className="text-[10px] uppercase font-bold tracking-wider opacity-40">Bestellt</span>
+                            <span className="font-mono font-bold">{item.quantityExpected}</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span className="text-[10px] uppercase font-bold tracking-wider opacity-40">Geliefert</span>
+                            <span className={`font-mono font-bold ${
+                                isPerfect ? 'text-emerald-500' : 
+                                isOver ? 'text-orange-500' : 
+                                item.quantityReceived > 0 ? 'text-amber-500' : 'opacity-40'
+                            }`}>
+                                {item.quantityReceived}
+                            </span>
+                        </div>
+                        {rawOpen > 0 && (
+                            <div className="flex justify-between col-span-2">
+                                <span className="text-[10px] uppercase font-bold tracking-wider text-amber-500">Offen</span>
+                                <span className={`font-mono font-bold ${isClosed ? 'text-slate-400 line-through' : 'text-amber-500'}`}>
+                                    {rawOpen}
+                                </span>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="flex justify-center">
+                        {isPerfect ? (
+                            <CheckCircle2 size={18} className="text-emerald-500" />
+                        ) : isOver ? (
+                            <Info size={18} className="text-orange-500" />
+                        ) : isShort ? (
+                            isClosed ? (
+                                <div title="Manuell abgeschlossen">
+    <CheckCircle2 size={18} className="text-slate-400" />
+</div>
+                            ) : (
+                                <AlertTriangle size={18} className="text-amber-500" />
+                            )
+                        ) : (
+                            <Clock size={18} className="opacity-30" />
+                        )}
+                    </div>
                 </div>
+            );
+        })}
+    </div>
+
+    {/* DESKTOP VIEW - Table */}
+    <table className="hidden lg:table w-full text-left text-sm">
+        <thead className={`sticky top-0 z-10 ${isDark ? 'bg-slate-950 text-slate-400' : 'bg-slate-50 text-slate-500'}`}>
+            <tr>
+                <th className="px-6 py-3 font-semibold">Artikel</th>
+                <th className="px-6 py-3 font-semibold w-24 text-center">Bestellt</th>
+                <th className="px-6 py-3 font-semibold w-24 text-center">Geliefert</th>
+                <th className="px-6 py-3 font-semibold w-24 text-center">Offen</th>
+                <th className="px-6 py-3 font-semibold w-20 text-center">Status</th>
+            </tr>
+        </thead>
+        <tbody className={`divide-y ${isDark ? 'divide-slate-800' : 'divide-slate-100'}`}>
+            {selectedOrder.items.map((item, idx) => {
+                const stockItem = MOCK_ITEMS.find(si => si.sku === item.sku);
+                const systemInfo = stockItem?.system || 'Material';
+                const isClosed = selectedOrder.isForceClosed;
+                const isShort = item.quantityReceived < item.quantityExpected;
+                const isPerfect = item.quantityReceived === item.quantityExpected;
+                const isOver = item.quantityReceived > item.quantityExpected;
+                const rawOpen = Math.max(0, item.quantityExpected - item.quantityReceived);
+
+                return (
+                <tr key={idx} className={isDark ? 'hover:bg-slate-800/50' : 'hover:bg-slate-50'}>
+                    <td className="px-6 py-4">
+                        <div className={`font-bold text-sm mb-1 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{item.name}</div>
+                        <div className="flex flex-wrap items-center gap-y-1 gap-x-3">
+                            <div className={`text-xs flex items-center gap-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}><span className="opacity-70">Artikelnummer:</span><span className="font-mono text-xs">{item.sku}</span></div>
+                            <span className={`px-1.5 py-0.5 rounded-[4px] text-[10px] font-bold uppercase tracking-wider border ${isDark ? 'bg-slate-800 text-slate-400 border-slate-700' : 'bg-slate-100 text-slate-600 border-slate-200'}`}>{systemInfo}</span>
+                        </div>
+                    </td>
+                    <td className="px-6 py-4 text-center font-bold">{item.quantityExpected}</td>
+                    <td className="px-6 py-4 text-center"><span className={`font-bold ${item.quantityReceived === item.quantityExpected ? 'text-emerald-500' : item.quantityReceived > item.quantityExpected ? 'text-orange-500' : item.quantityReceived > 0 ? 'text-amber-500' : 'text-slate-400'}`}>{item.quantityReceived}</span></td>
+                    <td className="px-6 py-4 text-center font-medium">
+                        {isShort ? (isClosed ? <span className="text-slate-400 decoration-slate-400 line-through" title="Restmenge storniert">{rawOpen}</span> : <span className="text-amber-500 font-bold">{rawOpen}</span>) : "-"}
+                    </td>
+                    <td className="px-6 py-4 text-center flex justify-center items-center">
+                        {isPerfect ? <CheckCircle2 className="text-emerald-500" size={18} /> : isOver ? <Info className="text-orange-500" size={18} /> : isShort ? (isClosed ? <div className="group relative flex justify-center cursor-help" title="Manuell abgeschlossen"><CheckCircle2 className="text-slate-400" size={18} /></div> : <AlertTriangle className="text-amber-500" size={18} />) : <span className="text-slate-300">-</span>}
+                    </td>
+                </tr>
+            )})}
+        </tbody>
+    </table>
+</div>
 
                 <div className={`p-5 border-t flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
                     {/* Left side - Action buttons */}
