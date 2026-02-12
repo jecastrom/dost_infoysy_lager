@@ -459,7 +459,7 @@ export const ReceiptManagement: React.FC<ReceiptManagementProps> = ({
         if (received > ordered) {
              return (
                 <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold border ${isDark ? 'bg-orange-500/10 text-orange-400 border-orange-500/30' : 'bg-orange-50 text-orange-700 border-orange-200'}`}>
-                    <Info size={10} /> Ãœberlieferung
+                    <Info size={10} /> Überlieferung
                 </span>
             );
         }
@@ -526,7 +526,7 @@ export const ReceiptManagement: React.FC<ReceiptManagementProps> = ({
       }
       
       if (isOver) {
-           return (<div className="flex justify-center" title="Ãœberlieferung"><Info size={18} className="text-orange-500" /></div>);
+           return (<div className="flex justify-center" title="Überlieferung"><Info size={18} className="text-orange-500" /></div>);
       }
 
       // Scenario B: Active Short -> Warning
@@ -586,12 +586,12 @@ export const ReceiptManagement: React.FC<ReceiptManagementProps> = ({
                 title={inspectionState.label}
             >
                 <ClipboardCheck size={16} />
-                <span className="hidden sm:inline text-xs font-bold">{inspectionState.label === 'PrÃ¼fung fortsetzen' ? 'PrÃ¼fen' : 'Ersatz / Nachlieferung'}</span>
+                <span className="hidden sm:inline text-xs font-bold">{inspectionState.label === 'Prüfung fortsetzen' ? 'Prüfen' : 'Ersatz / Nachlieferung'}</span>
             </button>
         )}
 
         {/* RETURN BUTTON (For ANY Issue or Overdelivery) */}
-        {selectedHeader && ['Ãœbermenge', 'Zu viel', 'Schaden', 'BeschÃ¤digt', 'Falsch geliefert', 'Abgelehnt', 'Sonstiges'].some(s => selectedHeader.status.includes(s)) && po && !po.isForceClosed && (
+        {selectedHeader && ['Übermenge', 'Zu viel', 'Schaden', 'Beschädigt', 'Falsch geliefert', 'Abgelehnt', 'Sonstiges'].some(s => selectedHeader.status.includes(s)) && po && !po.isForceClosed && (
              <button
                 onClick={(e) => { e.stopPropagation(); onInspect(po, 'return'); }}
                 className={`px-5 py-3 rounded-xl border flex items-center gap-2.5 font-bold text-sm transition-all shadow-sm ${
@@ -602,7 +602,7 @@ export const ReceiptManagement: React.FC<ReceiptManagementProps> = ({
                 title="RÃ¼cksendung erfassen (Korrektur)"
             >
                 <LogOut size={14} /> 
-                <span className="hidden sm:inline">RÃ¼cksendung</span>
+                <span className="hidden sm:inline">Rücksendung</span>
             </button>
         )}
 
@@ -637,7 +637,7 @@ export const ReceiptManagement: React.FC<ReceiptManagementProps> = ({
                  : 'bg-[#0077B5] hover:bg-[#00A0DC] text-white shadow-blue-500/20'
             }`}
           >
-            <ClipboardCheck size={20} /> Lieferung prÃ¼fen
+            <ClipboardCheck size={20} /> Lieferung prüfen
           </button>
         </div>
 
@@ -793,7 +793,7 @@ export const ReceiptManagement: React.FC<ReceiptManagementProps> = ({
                        </div>
                        {linkedPO?.pdfUrl && (
                          <div className="flex items-center justify-between">
-                           <span className="text-xs font-bold uppercase text-slate-500">BestÃ¤tigung</span>
+                           <span className="text-xs font-bold uppercase text-slate-500">Bestätigung</span>
                            <CheckCircle2 size={16} className="text-emerald-500" />
                          </div>
                        )}
@@ -817,7 +817,7 @@ export const ReceiptManagement: React.FC<ReceiptManagementProps> = ({
                  <tr>
                    <th className="p-4 font-semibold">Status</th>
                    <th className="p-4 font-semibold">Bestell Nr.</th>
-                   <th className="p-4 font-semibold text-center">BestellbestÃ¤tigung</th>
+                   <th className="p-4 font-semibold text-center">Bestellbestätigung</th>
                    <th className="p-4 font-semibold">Lieferschein</th>
                    <th className="p-4 font-semibold">Lieferant</th>
                    <th className="p-4 font-semibold">Aktualisiert am / von</th>
@@ -896,7 +896,7 @@ export const ReceiptManagement: React.FC<ReceiptManagementProps> = ({
                   )})}
                   {filteredRows.length === 0 && (
                     <tr>
-                      <td colSpan={8} className="p-12 text-center text-slate-500">Keine DatensÃ¤tze gefunden.</td>
+                      <td colSpan={8} className="p-12 text-center text-slate-500">Keine Datensätze gefunden.</td>
                     </tr>
                   )}
                </tbody>
@@ -981,7 +981,7 @@ export const ReceiptManagement: React.FC<ReceiptManagementProps> = ({
             className={`ml-auto flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${isDark ? 'text-slate-400 hover:bg-slate-800 hover:text-white' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'}`}
             title="ZurÃ¼ck zur Ãœbersicht"
           >
-              <span className="hidden md:inline">SchlieÃŸen</span>
+              <span className="hidden md:inline">Schließen</span>
               <X size={18} />
           </button>
       </div>
@@ -1127,7 +1127,7 @@ export const ReceiptManagement: React.FC<ReceiptManagementProps> = ({
                                     <div className={`p-4 border-b font-bold flex items-center gap-2 ${
                                         isDark ? 'bg-[#1f2937] border-slate-700 text-slate-200' : 'bg-slate-50 border-slate-300 text-slate-700'
                                     }`}>
-                                        <BarChart3 size={18} className="text-[#0077B5]" /> Bestell-Status (GesamtÃ¼bersicht)
+                                        <BarChart3 size={18} className="text-[#0077B5]" /> Bestell-Status (Gesamtübersicht)
                                     </div>
                                     {/* VERTICAL CARD LAYOUT - NO HORIZONTAL SCROLL */}
                                     <div className="divide-y divide-slate-500/10">
@@ -1188,7 +1188,7 @@ export const ReceiptManagement: React.FC<ReceiptManagementProps> = ({
                                     <div className="space-y-4">
                                         {visibleDeliveries.length === 0 ? (
                                             <div className="p-8 text-center text-slate-500 border border-dashed rounded-xl">
-                                                Noch keine physischen WareneingÃ¤nge verbucht.
+                                                Noch keine physischen Wareneingänge verbucht.
                                             </div>
                                         ) : (
                                             visibleDeliveries.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map((delivery, index) => {
@@ -1228,7 +1228,7 @@ export const ReceiptManagement: React.FC<ReceiptManagementProps> = ({
                                                                         </div>
                                                                         {linkedPO && (
                                                                             <div className="flex items-center gap-2">
-                                                                                <FileText size={12} /> VerknÃ¼pfte Bestellung: {linkedPO.id}
+                                                                                <FileText size={12} /> Verknüpfte Bestellung: {linkedPO.id}
                                                                             </div>
                                                                         )}
                                                                     </div>
@@ -1289,7 +1289,7 @@ export const ReceiptManagement: React.FC<ReceiptManagementProps> = ({
                                                                                 </div>
                                                                                 {(dItem.returnCarrier || dItem.returnTrackingId) && (
                                                                                     <div className={`text-[11px] pl-2 border-l-2 ${isDark ? 'border-slate-600 text-slate-400' : 'border-slate-300 text-slate-500'}`}>
-                                                                                        RÃ¼cksendung: {dItem.returnCarrier || 'â€“'} â€“ Tracking: {dItem.returnTrackingId || 'â€“'}
+                                                                                        Rücksendung: {dItem.returnCarrier || 'â€“'} â€“ Tracking: {dItem.returnTrackingId || 'â€“'}
                                                                                         {dItem.rejectionReason && <span> â€“ Grund: {dItem.rejectionReason}</span>}
                                                                                     </div>
                                                                                 )}
