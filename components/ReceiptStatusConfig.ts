@@ -246,7 +246,7 @@ export const RECEIPT_STATUS_CONFIG: Record<ReceiptMasterStatus, StatusConfig> = 
   },
 
   'Übermenge': {
-    key: 'uebermenge',
+    key: 'übermenge',
     displayName: 'Übermenge',
     description: 'Mehr Artikel geliefert als bestellt. Überzählige Artikel wurden erfasst und ggf. retourniert.',
     actionText: 'Rücksendung prüfen',
