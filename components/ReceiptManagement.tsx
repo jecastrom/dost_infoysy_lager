@@ -7,7 +7,7 @@ import {
   AlertCircle, CheckCircle2, ChevronDown, ChevronUp, FileText, Truck,
   BarChart3, Ban, Archive, Briefcase, Info, PackagePlus,
   AlertTriangle, Layers, XCircle, ClipboardCheck,
-  Undo2, MessageSquare, AlertOctagon, Box, Lock, LogOut
+  Undo2, MessageSquare, AlertOctagon, Box, Lock, LogOut, ChevronsDown
 } from 'lucide-react';
 import { ReceiptHeader, ReceiptItem, Theme, ReceiptComment, Ticket, PurchaseOrder, ReceiptMaster, DeliveryLog, ActiveModule, StockItem } from '../types';
 import { TicketSystem } from './TicketSystem';
@@ -574,57 +574,159 @@ export const ReceiptManagement: React.FC<ReceiptManagementProps> = ({
   };
 
   // --- ACTIONS RENDERER (Shared for both layouts) ---
-  const renderActions = (inspectionState?: { canInspect: boolean, label: string, style: string }, po?: PurchaseOrder) => (
+  const renderActions = (inspectionState?: { canInspect: boolean, label: string, style: string }, po?: PurchaseOrder) => {
+    const actions = [];
+
+    // SMART INSPECT BUTTON (Standard / Replacement)
+    if (inspectionState?.canInspect && po) {
+      actions.push({
+        key: 'inspect',
+        label: inspectionState.label === 'Prüfung fortsetzen' ? 'Prüfen' : 'Nachlieferung',
+        icon: ClipboardCheck,
+        onClick: (e: React.MouseEvent) => { e.stopPropagation(); onInspect(po, 'standard'); },
+        variant: inspectionState.style === 'primary' ? 'primary' : 'secondary',
+        tooltip: inspectionState.label
+      });
+    }
+
+    // RETURN BUTTON (For ANY Issue or Overdelivery)
+    if (selectedHeader && ['Übermenge', 'Zu viel', 'Schaden', 'Beschädigt', 'Falsch geliefert', 'Abgelehnt', 'Sonstiges'].some(s => selectedHeader.status.includes(s)) && po && !po.isForceClosed) {
+      actions.push({
+        key: 'return',
+        label: 'Rücksendung',
+        icon: LogOut,
+        onClick: (e: React.MouseEvent) => { e.stopPropagation(); onInspect(po, 'return'); },
+        variant: 'warning',
+        tooltip: 'Rücksendung erfassen (Korrektur)'
+      });
+    }
+
+    // CLOSE BUTTON
+    if (selectedHeader && selectedHeader.status !== 'Abgeschlossen') {
+      actions.push({
+        key: 'close',
+        label: 'Schließen',
+        icon: Archive,
+        onClick: handleForceClose,
+        variant: 'ghost',
+        tooltip: 'Abschließen'
+      });
+    }
+
+    if (actions.length === 0) return null;
+
+    // MOBILE: Dropdown menu if multiple actions
+    // DESKTOP: Inline buttons
+    return (
       <>
-        {/* SMART INSPECT BUTTON (Standard / Replacement) */}
-        {inspectionState?.canInspect && po && (
-            <button
-                onClick={(e) => { e.stopPropagation(); onInspect(po, 'standard'); }}
-                className={`flex items-center gap-2.5 px-5 py-3 rounded-xl border transition-all ${
-                    inspectionState.style === 'primary' 
+        {/* DESKTOP: Show all buttons inline */}
+        <div className="hidden lg:flex gap-2">
+          {actions.map(action => {
+            const Icon = action.icon;
+            return (
+              <button
+                key={action.key}
+                onClick={action.onClick}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border transition-all font-bold text-sm ${
+                  action.variant === 'primary' 
                     ? (isDark ? 'bg-blue-900/20 text-blue-400 border-blue-500/30 hover:bg-blue-900/40' : 'bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100')
-                    : (isDark ? 'border-slate-700 text-slate-400 hover:text-blue-400 hover:border-blue-500/50' : 'border-slate-300 text-slate-500 hover:text-blue-600 hover:border-blue-300')
+                    : action.variant === 'warning'
+                    ? (isDark ? 'bg-orange-500/20 text-orange-400 border-orange-500/50 hover:bg-orange-500/30' : 'bg-orange-600 text-white border-orange-600 hover:bg-orange-700')
+                    : (isDark ? 'border-slate-700 text-slate-400 hover:border-slate-600 hover:bg-slate-800' : 'border-slate-300 text-slate-500 hover:border-slate-400 hover:bg-slate-50')
                 }`}
-                title={inspectionState.label}
-            >
-                <ClipboardCheck size={16} />
-                <span className="hidden sm:inline text-xs font-bold">{inspectionState.label === 'Prüfung fortsetzen' ? 'Prüfen' : 'Ersatz / Nachlieferung'}</span>
-            </button>
-        )}
+                title={action.tooltip}
+              >
+                <Icon size={16} />
+                <span>{action.label}</span>
+              </button>
+            );
+          })}
+        </div>
 
-        {/* RETURN BUTTON (For ANY Issue or Overdelivery) */}
-        {selectedHeader && ['Übermenge', 'Zu viel', 'Schaden', 'Beschädigt', 'Falsch geliefert', 'Abgelehnt', 'Sonstiges'].some(s => selectedHeader.status.includes(s)) && po && !po.isForceClosed && (
-             <button
-                onClick={(e) => { e.stopPropagation(); onInspect(po, 'return'); }}
-                className={`px-5 py-3 rounded-xl border flex items-center gap-2.5 font-bold text-sm transition-all shadow-sm ${
-                    isDark 
-                    ? 'bg-orange-500/20 text-orange-400 border-orange-500/50 hover:bg-orange-500/30' 
-                    : 'bg-orange-600 text-white border-orange-600 hover:bg-orange-700'
-                }`}
-                title="RÃ¼cksendung erfassen (Korrektur)"
-            >
-                <LogOut size={14} /> 
-                <span className="hidden sm:inline">Rücksendung</span>
-            </button>
-        )}
-
-        
-
-        {selectedHeader && selectedHeader.status !== 'Abgeschlossen' && (
+        {/* MOBILE: Primary action + dropdown for others */}
+        <div className="flex lg:hidden gap-2 w-full sm:w-auto">
+          {actions.length === 1 ? (
+            // Single action: show as full button
             <button
-                onClick={handleForceClose}
-                className={`p-1.5 rounded-lg border transition-all ${
-                    isDark 
-                    ? 'border-slate-700 text-slate-400 hover:border-red-500 hover:text-red-400 hover:bg-red-500/10' 
-                    : 'border-slate-300 text-slate-500 hover:border-red-500 hover:text-red-600 hover:bg-red-50'
-                }`}
-                title="AbschlieÃŸen"
+              onClick={actions[0].onClick}
+              className={`flex-1 sm:flex-none flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl font-bold text-base transition-all shadow-lg active:scale-95 ${
+                actions[0].variant === 'primary' 
+                  ? 'bg-[#0077B5] text-white hover:bg-[#00A0DC]'
+                  : actions[0].variant === 'warning'
+                  ? 'bg-orange-600 text-white hover:bg-orange-700'
+                  : (isDark ? 'bg-slate-800 text-slate-300 border border-slate-700' : 'bg-white text-slate-700 border border-slate-300')
+              }`}
             >
-                <Archive size={16} />
+              {React.createElement(actions[0].icon, { size: 20 })}
+              <span>{actions[0].label}</span>
             </button>
-        )}
+          ) : (
+            // Multiple actions: show primary + menu
+            <>
+              <button
+                onClick={actions[0].onClick}
+                className="flex-1 flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl font-bold text-base bg-[#0077B5] text-white hover:bg-[#00A0DC] transition-all shadow-lg active:scale-95"
+              >
+                {React.createElement(actions[0].icon, { size: 20 })}
+                <span>{actions[0].label}</span>
+              </button>
+              
+              {/* Action Menu Button */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowMobileActionMenu(!showMobileActionMenu)}
+                  className={`p-3.5 rounded-xl border transition-all ${
+                    isDark 
+                      ? 'bg-slate-800 border-slate-700 text-slate-300' 
+                      : 'bg-white border-slate-300 text-slate-700'
+                  }`}
+                >
+                  <ChevronsDown size={20} />
+                </button>
+                
+                {/* Dropdown Menu */}
+                {showMobileActionMenu && (
+                  <>
+                    <div 
+                      className="fixed inset-0 z-40" 
+                      onClick={() => setShowMobileActionMenu(false)}
+                    />
+                    <div className={`absolute right-0 top-full mt-2 w-64 rounded-xl border shadow-2xl overflow-hidden z-50 ${
+                      isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'
+                    }`}>
+                      {actions.slice(1).map(action => {
+                        const Icon = action.icon;
+                        return (
+                          <button
+                            key={action.key}
+                            onClick={(e) => {
+                              action.onClick(e);
+                              setShowMobileActionMenu(false);
+                            }}
+                            className={`w-full flex items-center gap-3 px-4 py-3.5 text-left transition-colors border-b last:border-0 ${
+                              action.variant === 'warning'
+                                ? (isDark ? 'text-orange-400 hover:bg-orange-500/10 border-slate-800' : 'text-orange-600 hover:bg-orange-50 border-slate-200')
+                                : (isDark ? 'text-slate-300 hover:bg-slate-800 border-slate-800' : 'text-slate-700 hover:bg-slate-50 border-slate-200')
+                            }`}
+                          >
+                            <Icon size={18} />
+                            <div>
+                              <div className="font-bold text-sm">{action.label}</div>
+                              <div className="text-xs opacity-60">{action.tooltip}</div>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
+              </div>
+            </>
+          )}
+        </div>
       </>
-  );
+    );
+  };
 
   if (!selectedBatchId) {
     return (
