@@ -85,6 +85,8 @@ export const ReceiptManagement: React.FC<ReceiptManagementProps> = ({
   // Expanded Delivery Logs State
   const [expandedDeliveryId, setExpandedDeliveryId] = useState<string | null>(null);
 
+  // Mobile action menu state
+  const [showMobileActionMenu, setShowMobileActionMenu] = useState(false);
   // New State: Delivery List Popover
   const [showDeliveryList, setShowDeliveryList] = useState(false);
 
