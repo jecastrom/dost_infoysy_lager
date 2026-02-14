@@ -750,7 +750,7 @@ export default function App() {
       }
   };
 
-  };  // ← this is the closing brace of handleRevertReceipt (already there)
+
 
   // --- DIRECT RETURN PROCESSING (No wizard) ---
   const handleProcessReturn = (poId: string, data: { quantity: number; reason: string; carrier: string; trackingId: string }) => {
@@ -950,5 +950,3 @@ export default function App() {
       </main>
     </div>
     </ErrorBoundary>
-  );
-
