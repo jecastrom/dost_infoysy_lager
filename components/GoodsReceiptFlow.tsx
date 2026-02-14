@@ -373,7 +373,7 @@ interface GoodsReceiptFlowProps {
   onLogStock?: (itemId: string, itemName: string, action: 'add' | 'remove', quantity: number, source?: string, context?: 'normal' | 'project' | 'manual' | 'po-normal' | 'po-project') => void;
   purchaseOrders?: PurchaseOrder[];
   initialPoId?: string | null;
-  initialMode?: 'standard' | 'return';
+  initialMode?: 'standard' | 'return' | 'problem';
   receiptMasters?: ReceiptMaster[];
   ticketConfig: TicketConfig;
   onAddTicket: (ticket: Ticket) => void;
@@ -536,12 +536,30 @@ export const GoodsReceiptFlow: React.FC<GoodsReceiptFlowProps> = ({
       return { item, qtyReceived: qty, qtyDamaged: 0, qtyWrong: 0, qtyRejected: 0, qtyAccepted: qty, rejectionReason: '' as const, rejectionNotes: '', returnCarrier: '', returnTrackingId: '', orderedQty: poItem.quantityExpected, previouslyReceived: hist, location: headerData.warehouseLocation, issueNotes: '', showIssuePanel: false, isManualAddition: false };
     }));
   };
+  // PROBLEM MODE: Load PO items fresh — ignore all delivery history
+  const handleSelectPOProblem = (po: PurchaseOrder) => {
+    setLinkedPoId(po.id);
+    setHeaderData(prev => ({ ...prev, bestellNr: po.id, lieferant: po.supplier, lieferscheinNr: `KORR-${new Date().toISOString().split('T')[0]}` }));
+    setShowPoModal(false);
+    setCardIdx(0);
+    setCart(po.items.map(poItem => {
+      const inv = existingItems.find(e => e.sku === poItem.sku);
+      const item: StockItem = inv ? { ...inv } : { id: crypto.randomUUID(), name: poItem.name, sku: poItem.sku, system: 'Sonstiges', category: 'Material', stockLevel: 0, minStock: 0, warehouseLocation: headerData.warehouseLocation, status: 'Active', lastUpdated: Date.now() };
+      return { item, qtyReceived: 0, qtyDamaged: 0, qtyWrong: 0, qtyRejected: 0, qtyAccepted: 0, rejectionReason: '' as const, rejectionNotes: '', returnCarrier: '', returnTrackingId: '', orderedQty: poItem.quantityExpected, previouslyReceived: 0, location: headerData.warehouseLocation, issueNotes: '', showIssuePanel: false, isManualAddition: false };
+    }));
+  };
 
   useEffect(() => {
     if (initialPoId && purchaseOrders && !linkedPoId) {
       const po = purchaseOrders.find(p => p.id === initialPoId);
       if (po) {
-        handleSelectPO(po);
+        if (initialMode === 'problem') {
+          // PROBLEM MODE: Fresh inspection — ignore delivery history
+          handleSelectPOProblem(po);
+          setStep(2);
+        } else {
+          handleSelectPO(po);
+        }
         if (initialMode === 'return') {
           const d = new Date().toLocaleDateString('de-DE', {day:'2-digit',month:'2-digit',year:'numeric'}).replace(/\./g, '');
           let loc = headerData.warehouseLocation || 'Wareneingang';

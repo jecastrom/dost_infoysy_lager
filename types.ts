@@ -131,6 +131,7 @@ export interface DeliveryLog {
   date: string;
   lieferscheinNr: string;
   items: DeliveryLogItem[];
+  isStorniert?: boolean;
 }
 
 export type ReceiptMasterStatus = 'Offen' | 'Abgeschlossen' | 'In Prüfung' | 'Gebucht' | 'Teillieferung' | 'Schaden' | 'Abgelehnt' | 'Falsch geliefert' | 'Schaden + Falsch' | 'Übermenge' | 'Wartet auf Prüfung';
