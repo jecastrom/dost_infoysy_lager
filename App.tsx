@@ -403,6 +403,7 @@ export default function App() {
     const timestamp = Date.now();
 
     // --- PROBLEM MODE: Cancel old delivery + reverse stock BEFORE creating new ---
+    const problemCanceledQty = new Map<string, number>();
     if (goodsReceiptMode === 'problem' && headerData.bestellNr) {
       const oldPoId = headerData.bestellNr;
       const oldMaster = receiptMasters.find(m => m.poId === oldPoId);
@@ -445,6 +446,10 @@ export default function App() {
           if (oldHeader) {
             setReceiptHeaders(prev => prev.map(h => h.batchId === oldHeader.batchId ? { ...h, status: 'Storniert' } : h));
           }
+          // 5. Build local map of canceled quantities (avoids stale React state)
+          lastDelivery.items.forEach(oldItem => {
+            problemCanceledQty.set(oldItem.sku, oldItem.quantityAccepted);
+          });
         }
       }
       // Reset mode after handling
@@ -597,7 +602,9 @@ export default function App() {
                 items: cartItems.map(c => {
                     const poItem = currentPO?.items.find(pi => pi.sku === c.item.sku);
                     const ordered = poItem ? poItem.quantityExpected : 0;
-                    const previous = poItem ? poItem.quantityReceived : 0;
+                    const rawPrevious = poItem ? poItem.quantityReceived : 0;
+                    // In problem mode, subtract canceled qty (React state is stale)
+                    const previous = rawPrevious - (problemCanceledQty.get(c.item.sku) || 0);
                     
                     // Stats for Snapshot
                     const currentAccepted = c.qtyAccepted ?? c.qty;
