@@ -405,6 +405,7 @@ export const GoodsReceiptFlow: React.FC<GoodsReceiptFlowProps> = ({
   const [lagerortOptions, setLagerortOptions] = useState<string[]>(LAGERORT_OPTIONS);
   const [returnPopup, setReturnPopup] = useState<ReturnPopupData | null>(null);
   const [cardIdx, setCardIdx] = useState(0);
+  const [returnAutoAdvancing, setReturnAutoAdvancing] = useState(false);
 
   // --- LIVE MATH ---
   const getLineCalc = (line: CartItem) => {
@@ -530,11 +531,20 @@ export const GoodsReceiptFlow: React.FC<GoodsReceiptFlowProps> = ({
           const fi = existingItems.find(i => i.sku === po.items[0]?.sku);
           if (fi?.warehouseLocation) loc = fi.warehouseLocation;
           setHeaderData(prev => ({ ...prev, lieferscheinNr: `RÜCK-${d}`, warehouseLocation: loc, status: 'Rücklieferung' }));
-          setStep(2);
+          setReturnAutoAdvancing(true);
+          setStep(3);
         } else { setStep(1); }
       }
     }
   }, [initialPoId, purchaseOrders, initialMode]);
+
+  // Auto-clear return loading overlay once step 3 is ready with cart
+  useEffect(() => {
+    if (returnAutoAdvancing && step === 3 && cart.length > 0) {
+      const timer = setTimeout(() => setReturnAutoAdvancing(false), 600);
+      return () => clearTimeout(timer);
+    }
+  }, [returnAutoAdvancing, step, cart.length]);
 
   const handleAdminCloseToggle = (checked: boolean) => {
     setIsAdminClose(checked);
@@ -728,6 +738,16 @@ export const GoodsReceiptFlow: React.FC<GoodsReceiptFlowProps> = ({
 
   return (
     <div className={`h-full flex flex-col rounded-2xl border overflow-hidden animate-in slide-in-from-right-8 duration-300 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+
+      {/* RETURN AUTO-ADVANCE OVERLAY */}
+      {returnAutoAdvancing && createPortal(
+        <div className="fixed inset-0 z-[100000] bg-slate-900/70 backdrop-blur-sm flex items-center justify-center animate-in fade-in duration-200">
+          <div className="flex flex-col items-center gap-4">
+            <Loader2 size={40} className="text-[#0077B5] animate-spin" />
+            <p className="text-white font-bold text-lg">Rücksendung wird vorbereitet…</p>
+          </div>
+        </div>, document.body
+      )}
 
       {/* SUCCESS OVERLAY */}
       {submissionStatus === 'success' && createPortal(
@@ -1271,7 +1291,7 @@ export const GoodsReceiptFlow: React.FC<GoodsReceiptFlowProps> = ({
 
       {/* STICKY FOOTER - PINNED TO BOTTOM */}
       <div className={`sticky bottom-0 z-10 p-4 md:p-5 border-t flex justify-between shrink-0 ${isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
-        {step > 1 ? <button onClick={() => setStep(prev => (prev - 1) as any)} className="px-6 py-3 rounded-xl font-bold bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300">Zurück</button> : <div/>}
+        {step > 1 ? <button onClick={() => { if (initialMode === 'return' && step === 3) { onClose(); } else { setStep(prev => (prev - 1) as any); } }} className="px-6 py-3 rounded-xl font-bold bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300">{initialMode === 'return' && step === 3 ? 'Schließen' : 'Zurück'}</button> : <div/>}
         {step < 3 ? (
           <button onClick={() => setStep(prev => (prev + 1) as any)} disabled={step === 1 ? !headerData.lieferscheinNr : cart.length === 0} className="px-8 py-3 bg-[#0077B5] text-white rounded-xl font-bold disabled:opacity-50">Weiter</button>
         ) : (
