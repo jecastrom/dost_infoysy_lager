@@ -194,6 +194,8 @@ const LAGERORT_OPTIONS: string[] = [
 interface CartItem {
     item: StockItem;
     qtyReceived: number;
+    qtyDamaged: number;
+    qtyWrong: number;
     qtyRejected: number;
     qtyAccepted: number;
     location: string;
@@ -412,11 +414,13 @@ export const GoodsReceiptFlow: React.FC<GoodsReceiptFlowProps> = ({
     const bestellt = line.orderedQty || 0;
     const bisHeute = line.previouslyReceived || 0;
     const heute = line.qtyReceived;
-    const zurueck = line.qtyRejected;
+    const beschaedigt = line.qtyDamaged || 0;
+    const falsch = line.qtyWrong || 0;
+    const zurueck = beschaedigt + falsch;
     const geliefertGesamt = bisHeute + heute;
     const zuViel = Math.max(0, geliefertGesamt - zurueck - bestellt);
     const offen = Math.max(0, bestellt - (geliefertGesamt - zurueck));
-    return { bestellt, bisHeute, heute, zurueck, geliefertGesamt, zuViel, offen };
+    return { bestellt, bisHeute, heute, zurueck, beschaedigt, falsch, geliefertGesamt, zuViel, offen };
   };
 
   const getAutoStatusIcon = (line: CartItem) => {
@@ -427,15 +431,17 @@ export const GoodsReceiptFlow: React.FC<GoodsReceiptFlowProps> = ({
   };
 
   const globalStats = useMemo(() => {
-    let totalOffen = 0, totalZuViel = 0, totalZurueck = 0, totalBuchung = 0;
+    let totalOffen = 0, totalZuViel = 0, totalZurueck = 0, totalBuchung = 0, totalDamaged = 0, totalWrong = 0;
     cart.forEach(c => {
       const calc = getLineCalc(c);
       totalOffen += calc.offen;
       totalZuViel += calc.zuViel;
       totalZurueck += c.qtyRejected;
       totalBuchung += c.qtyAccepted;
+      totalDamaged += c.qtyDamaged;
+      totalWrong += c.qtyWrong;
     });
-    return { totalOffen, totalZuViel, totalZurueck, totalBuchung };
+    return { totalOffen, totalDamaged, totalWrong, totalZuViel, totalZurueck, totalBuchung };
   }, [cart]);
 
   const isPartialDelivery = useMemo(() => {
@@ -446,8 +452,8 @@ export const GoodsReceiptFlow: React.FC<GoodsReceiptFlowProps> = ({
   const calculateReceiptStatus = (currentCart: CartItem[], poId: string | null) => {
     const allRejected = currentCart.length > 0 && currentCart.every(c => c.qtyRejected === c.qtyReceived && c.qtyReceived > 0);
     if (allRejected) return 'Abgelehnt';
-    const hasDamage = currentCart.some(c => c.rejectionReason === 'Damaged' && c.qtyRejected > 0);
-    const hasWrong = currentCart.some(c => c.rejectionReason === 'Wrong' && c.qtyRejected > 0);
+    const hasDamage = currentCart.some(c => c.qtyDamaged > 0);
+    const hasWrong = currentCart.some(c => c.qtyWrong > 0);
     if (hasDamage && hasWrong) return 'Schaden + Falsch';
     if (hasDamage) return 'Schaden';
     if (hasWrong) return 'Falsch geliefert';
@@ -484,7 +490,7 @@ export const GoodsReceiptFlow: React.FC<GoodsReceiptFlowProps> = ({
 
   const addToCart = (item: StockItem) => {
     setCart(prev => [...prev, {
-      item, qtyReceived: 1, qtyRejected: 0, qtyAccepted: 1,
+      item, qtyReceived: 1, qtyDamaged: 0, qtyWrong: 0, qtyRejected: 0, qtyAccepted: 1,
       rejectionReason: '', rejectionNotes: '', returnCarrier: '', returnTrackingId: '',
       orderedQty: linkedPoId ? 0 : undefined, previouslyReceived: 0,
       location: headerData.warehouseLocation, issueNotes: '', showIssuePanel: false, isManualAddition: !!linkedPoId
@@ -496,7 +502,15 @@ export const GoodsReceiptFlow: React.FC<GoodsReceiptFlowProps> = ({
     setCart(prev => prev.map((line, i) => {
       if (i !== index) return line;
       const u = { ...line, [field]: value };
-      if (field === 'qtyReceived' || field === 'qtyRejected') u.qtyAccepted = u.qtyReceived - u.qtyRejected;
+      if (field === 'qtyReceived' || field === 'qtyRejected' || field === 'qtyDamaged' || field === 'qtyWrong') {
+        u.qtyRejected = u.qtyDamaged + u.qtyWrong;
+        u.qtyAccepted = u.qtyReceived - u.qtyRejected;
+        // Auto-set rejectionReason from math
+        if (u.qtyDamaged > 0 && u.qtyWrong > 0) u.rejectionReason = 'Damaged';
+        else if (u.qtyDamaged > 0) u.rejectionReason = 'Damaged';
+        else if (u.qtyWrong > 0) u.rejectionReason = 'Wrong';
+        else u.rejectionReason = '';
+      }
       return u;
     }));
   };
@@ -516,7 +530,7 @@ export const GoodsReceiptFlow: React.FC<GoodsReceiptFlowProps> = ({
       const remaining = Math.max(0, poItem.quantityExpected - hist);
       const qty = useZero ? 0 : remaining;
       const item: StockItem = inv ? { ...inv } : { id: crypto.randomUUID(), name: poItem.name, sku: poItem.sku, system: 'Sonstiges', category: 'Material', stockLevel: 0, minStock: 0, warehouseLocation: headerData.warehouseLocation, status: 'Active', lastUpdated: Date.now() };
-      return { item, qtyReceived: qty, qtyRejected: 0, qtyAccepted: qty, rejectionReason: '' as const, rejectionNotes: '', returnCarrier: '', returnTrackingId: '', orderedQty: poItem.quantityExpected, previouslyReceived: hist, location: headerData.warehouseLocation, issueNotes: '', showIssuePanel: false, isManualAddition: false };
+      return { item, qtyReceived: qty, qtyDamaged: 0, qtyWrong: 0, qtyRejected: 0, qtyAccepted: qty, rejectionReason: '' as const, rejectionNotes: '', returnCarrier: '', returnTrackingId: '', orderedQty: poItem.quantityExpected, previouslyReceived: hist, location: headerData.warehouseLocation, issueNotes: '', showIssuePanel: false, isManualAddition: false };
     }));
   };
 
@@ -550,7 +564,7 @@ export const GoodsReceiptFlow: React.FC<GoodsReceiptFlowProps> = ({
     setIsAdminClose(checked);
     if (checked) {
       setHeaderData(prev => ({ ...prev, lieferscheinNr: `ABSCHLUSS-${new Date().toISOString().split('T')[0]}`, lieferant: linkedPoId ? (purchaseOrders?.find(p => p.id === linkedPoId)?.supplier || prev.lieferant) : prev.lieferant }));
-      setCart(prev => prev.map(c => ({ ...c, qtyReceived: 0, qtyAccepted: 0, qtyRejected: 0 })));
+      setCart(prev => prev.map(c => ({ ...c, qtyReceived: 0, qtyDamaged: 0, qtyWrong: 0, qtyAccepted: 0, qtyRejected: 0 })));
       setForceClose(true);
     } else {
       setHeaderData(prev => ({ ...prev, lieferscheinNr: prev.lieferscheinNr.startsWith('ABSCHLUSS-') ? '' : prev.lieferscheinNr }));
@@ -1072,9 +1086,10 @@ export const GoodsReceiptFlow: React.FC<GoodsReceiptFlowProps> = ({
                               {linkedPoId && <th className="px-4 py-3 text-center font-bold">Bestellt</th>}
                               {linkedPoId && <th className="px-4 py-3 text-center font-bold">Bis heute</th>}
                               <th className="px-4 py-3 text-center font-bold">Geliefert</th>
+                              {globalStats.totalDamaged > 0 && <th className="px-4 py-3 text-center font-bold text-red-500">Beschädigt</th>}
+                              {globalStats.totalWrong > 0 && <th className="px-4 py-3 text-center font-bold text-orange-500">Falsch</th>}
                               {linkedPoId && <th className="px-4 py-3 text-center font-bold">Offen</th>}
                               {linkedPoId && <th className="px-4 py-3 text-center font-bold">Zu viel</th>}
-                              <th className="px-4 py-3 text-center font-bold">Abgelehnt</th>
                               <th className="px-4 py-3 text-center font-bold">Buchung</th>
                               <th className="px-4 py-3 text-center font-bold">Status</th>
                               <th className="px-4 py-3 text-center font-bold">Aktionen</th>
