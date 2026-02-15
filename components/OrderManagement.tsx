@@ -311,8 +311,8 @@ export const OrderManagement: React.FC<OrderManagementProps> = ({
           // For modal menu, use left positioning. For table menu, use right positioning
           if (id === 'modal') {
               setMenuPos({ 
-                  top: rect.top + scrollTop - 4,
-                  right: document.body.clientWidth - (rect.right + scrollLeft)
+                  top: rect.top - 4,
+                  right: document.body.clientWidth - rect.right
               });
           } else {
               setMenuPos({ 
