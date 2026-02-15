@@ -7,7 +7,7 @@ import {
   AlertCircle, CheckCircle2, ChevronDown, ChevronUp, FileText, Truck,
   BarChart3, Ban, Archive, Briefcase, Info, PackagePlus,
   AlertTriangle, Layers, XCircle, ClipboardCheck,
-  Undo2, MessageSquare, AlertOctagon, Box, Lock, LogOut, ChevronsDown, RotateCcw
+  Undo2, MessageSquare, AlertOctagon, Box, Lock, LogOut, ChevronsDown, RotateCcw, MoreVertical
 } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { ReceiptHeader, ReceiptItem, Theme, ReceiptComment, Ticket, PurchaseOrder, ReceiptMaster, DeliveryLog, ActiveModule, StockItem } from '../types';
@@ -659,118 +659,68 @@ export const ReceiptManagement: React.FC<ReceiptManagementProps> = ({
 
     if (actions.length === 0) return null;
 
-    // MOBILE: Dropdown menu if multiple actions
-    // DESKTOP: Inline buttons
+    // UNIFIED: Single three-dot menu for both mobile and desktop
     return (
-      <>
-        {/* DESKTOP: Show all buttons inline */}
-        <div className="hidden lg:flex gap-2">
-          {actions.map(action => {
-            const Icon = action.icon;
-            return (
-              <button
-                key={action.key}
-                onClick={action.onClick}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border transition-all font-bold text-sm ${
-                  action.variant === 'primary' 
-                    ? (isDark ? 'bg-blue-900/20 text-blue-400 border-blue-500/30 hover:bg-blue-900/40' : 'bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100')
-                    : action.variant === 'warning'
-                    ? (isDark ? 'bg-orange-500/20 text-orange-400 border-orange-500/50 hover:bg-orange-500/30' : 'bg-orange-600 text-white border-orange-600 hover:bg-orange-700')
-                    : action.variant === 'danger'
-                    ? (isDark ? 'bg-red-500/20 text-red-400 border-red-500/50 hover:bg-red-500/30' : 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100')
-                    : (isDark ? 'border-slate-700 text-slate-400 hover:border-slate-600 hover:bg-slate-800' : 'border-slate-300 text-slate-500 hover:border-slate-400 hover:bg-slate-50')
-                }`}
-                title={action.tooltip}
-              >
-                <Icon size={16} />
-                <span>{action.label}</span>
-              </button>
-            );
-          })}
-        </div>
+      <div className="relative">
+        <button
+          data-receipt-actions-menu
+          onClick={(e) => { e.stopPropagation(); setShowMobileActionMenu(!showMobileActionMenu); }}
+          className={`px-4 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 transition-all border ${
+            showMobileActionMenu
+              ? (isDark ? 'bg-slate-700 border-slate-600' : 'bg-slate-100 border-slate-300')
+              : (isDark ? 'border-slate-700 hover:bg-slate-800' : 'border-slate-300 hover:bg-slate-50')
+          }`}
+        >
+          <MoreVertical size={18} />
+          <span className="hidden sm:inline">Weitere Aktionen</span>
+        </button>
 
-        {/* MOBILE: Primary action + dropdown for others */}
-        <div className="flex lg:hidden gap-2 w-full sm:w-auto">
-          {actions.length === 1 ? (
-            // Single action: show as full button
-            <button
-              onClick={actions[0].onClick}
-              className={`flex-1 sm:flex-none flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl font-bold text-base transition-all shadow-lg active:scale-95 ${
-                actions[0].variant === 'primary' 
-                  ? 'bg-[#0077B5] text-white hover:bg-[#00A0DC]'
-                  : actions[0].variant === 'warning'
-                  ? 'bg-orange-600 text-white hover:bg-orange-700'
-                  : (isDark ? 'bg-slate-800 text-slate-300 border border-slate-700' : 'bg-white text-slate-700 border border-slate-300')
+        {showMobileActionMenu && createPortal(
+          <>
+            <div className="fixed inset-0 z-[9998]" onClick={() => setShowMobileActionMenu(false)} />
+            <div
+              className={`fixed z-[9999] w-64 rounded-xl shadow-2xl border p-1.5 animate-in fade-in zoom-in-95 duration-150 origin-top-right ${
+                isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'
               }`}
+              style={(() => {
+                const btn = document.querySelector('[data-receipt-actions-menu]');
+                if (btn) {
+                  const rect = btn.getBoundingClientRect();
+                  const vw = document.documentElement.clientWidth;
+                  const vh = window.innerHeight;
+                  const menuH = actions.length * 52 + 12;
+                  const top = rect.bottom + menuH > vh ? rect.top - menuH : rect.bottom + 4;
+                  return { top, right: Math.max(8, vw - rect.right) };
+                }
+                return { top: 100, right: 16 };
+              })()}
             >
-              {React.createElement(actions[0].icon, { size: 20 })}
-              <span>{actions[0].label}</span>
-            </button>
-          ) : (
-            // Multiple actions: show primary + menu
-            <>
-              <button
-                onClick={actions[0].onClick}
-                className="flex-1 flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl font-bold text-base bg-[#0077B5] text-white hover:bg-[#00A0DC] transition-all shadow-lg active:scale-95"
-              >
-                {React.createElement(actions[0].icon, { size: 20 })}
-                <span>{actions[0].label}</span>
-              </button>
-              
-              {/* Action Menu Button */}
-              <div className="relative">
-                <button
-                  onClick={() => setShowMobileActionMenu(!showMobileActionMenu)}
-                  className={`p-3.5 rounded-xl border transition-all ${
-                    isDark 
-                      ? 'bg-slate-800 border-slate-700 text-slate-300' 
-                      : 'bg-white border-slate-300 text-slate-700'
-                  }`}
-                >
-                  <ChevronsDown size={20} />
-                </button>
-                
-                {/* Dropdown Menu */}
-                {showMobileActionMenu && (
-                  <>
-                    <div 
-                      className="fixed inset-0 z-40" 
-                      onClick={() => setShowMobileActionMenu(false)}
-                    />
-                    <div className={`absolute right-0 top-full mt-2 w-64 rounded-xl border shadow-2xl overflow-hidden z-50 ${
-                      isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'
-                    }`}>
-                      {actions.slice(1).map(action => {
-                        const Icon = action.icon;
-                        return (
-                          <button
-                            key={action.key}
-                            onClick={(e) => {
-                              action.onClick(e);
-                              setShowMobileActionMenu(false);
-                            }}
-                            className={`w-full flex items-center gap-3 px-4 py-3.5 text-left transition-colors border-b last:border-0 ${
-                              action.variant === 'warning'
-                                ? (isDark ? 'text-orange-400 hover:bg-orange-500/10 border-slate-800' : 'text-orange-600 hover:bg-orange-50 border-slate-200')
-                                : (isDark ? 'text-slate-300 hover:bg-slate-800 border-slate-800' : 'text-slate-700 hover:bg-slate-50 border-slate-200')
-                            }`}
-                          >
-                            <Icon size={18} />
-                            <div>
-                              <div className="font-bold text-sm">{action.label}</div>
-                              <div className="text-xs opacity-60">{action.tooltip}</div>
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </>
-                )}
+              <div className="flex flex-col gap-0.5">
+                {actions.map(action => {
+                  const Icon = action.icon;
+                  return (
+                    <button
+                      key={action.key}
+                      onClick={(e) => { action.onClick(e); setShowMobileActionMenu(false); }}
+                      className={`w-full text-left px-3 py-2.5 text-sm font-medium flex items-center gap-3 transition-colors rounded-lg ${
+                        action.variant === 'warning'
+                          ? (isDark ? 'text-orange-400 hover:bg-orange-500/10' : 'text-orange-600 hover:bg-orange-50')
+                          : action.variant === 'danger'
+                          ? (isDark ? 'text-red-400 hover:bg-red-500/10' : 'text-red-600 hover:bg-red-50')
+                          : (isDark ? 'text-slate-200 hover:bg-slate-700' : 'text-slate-700 hover:bg-slate-50')
+                      }`}
+                    >
+                      <Icon size={16} />
+                      <span>{action.label}</span>
+                    </button>
+                  );
+                })}
               </div>
-            </>
-          )}
-        </div>
-      </>
+            </div>
+          </>,
+          document.body
+        )}
+      </div>
     );
   };
 
