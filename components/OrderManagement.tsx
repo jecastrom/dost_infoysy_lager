@@ -144,6 +144,38 @@ const OrderStatusBadges = ({ order, linkedReceipt, theme }: { order: PurchaseOrd
                     <AlertCircle size={10} /> Schaden
                 </span>
             );
+        } else if (s === 'Falsch geliefert') {
+            badges.push(
+                <span key="proc-wrong" className={`px-2.5 py-0.5 rounded-md text-[10px] font-bold border uppercase tracking-wider flex items-center gap-1 ${
+                    isDark ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' : 'bg-orange-50 text-orange-600 border-orange-200'
+                }`}>
+                    <AlertCircle size={10} /> Falsch
+                </span>
+            );
+        } else if (s === 'Schaden + Falsch') {
+            badges.push(
+                <span key="proc-both" className={`px-2.5 py-0.5 rounded-md text-[10px] font-bold border uppercase tracking-wider flex items-center gap-1 ${
+                    isDark ? 'bg-red-500/10 text-red-400 border-red-500/20' : 'bg-red-50 text-red-600 border-red-200'
+                }`}>
+                    <AlertCircle size={10} /> Schaden + Falsch
+                </span>
+            );
+        } else if (s === 'Übermenge') {
+            badges.push(
+                <span key="proc-over" className={`px-2.5 py-0.5 rounded-md text-[10px] font-bold border uppercase tracking-wider flex items-center gap-1 ${
+                    isDark ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' : 'bg-orange-50 text-orange-600 border-orange-200'
+                }`}>
+                    <Info size={10} /> Übermenge
+                </span>
+            );
+        } else if (s === 'Abgelehnt') {
+            badges.push(
+                <span key="proc-rejected" className={`px-2.5 py-0.5 rounded-md text-[10px] font-bold border uppercase tracking-wider flex items-center gap-1 ${
+                    isDark ? 'bg-red-500/10 text-red-400 border-red-500/20' : 'bg-red-50 text-red-600 border-red-200'
+                }`}>
+                    <Ban size={10} /> Abgelehnt
+                </span>
+            );
         }
     }
 
