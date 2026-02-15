@@ -324,9 +324,9 @@ export const OrderManagement: React.FC<OrderManagementProps> = ({
                   right: document.body.clientWidth - rect.right
               });
           } else {
-              // Table menu: Use ABSOLUTE positioning (Document relative) to prevent layout shifts
+              // Table menu: Use FIXED positioning (Viewport relative) to prevent scroll jumps
               setMenuPos({ 
-                  top: rect.bottom + scrollY, 
+                  top: rect.bottom, 
                   right: document.body.clientWidth - rect.right 
               });
           }
@@ -699,7 +699,7 @@ export const OrderManagement: React.FC<OrderManagementProps> = ({
                             <div 
                                 style={{ top: menuPos.top, right: menuPos.right }}
                                 // Use 'absolute' for table rows (prevents jumping) and 'fixed' for modal headers
-                                className={`${activeMenuId === 'modal' ? 'fixed' : 'absolute'} z-[9999] w-56 rounded-xl shadow-xl border p-1 animate-in fade-in zoom-in-95 duration-100 origin-top-right ${
+                                className={`fixed z-[9999] w-56 rounded-xl shadow-xl border p-1 animate-in fade-in zoom-in-95 duration-100 origin-top-right ${
                                     isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'
                                 }`}
                                 onClick={(e) => e.stopPropagation()}
