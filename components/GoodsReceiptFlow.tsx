@@ -670,11 +670,42 @@ export const GoodsReceiptFlow: React.FC<GoodsReceiptFlowProps> = ({
       
       // CREATE TICKET FOR QUALITY ISSUES (Damage, Wrong, Rejected)
       if (qualityIssues.length > 0) {
+        // Build subject: direct problem type — PO number
+        const subjectParts: string[] = [];
+        if (qualityTypes.has('Beschädigung')) subjectParts.push('Beschädigung');
+        if (qualityTypes.has('Falschlieferung')) subjectParts.push('Falschlieferung');
+        if (qualityTypes.has('Abweichung')) subjectParts.push('Abweichung');
+        const ticketSubject = `${subjectParts.join(' + ')} — ${linkedPoId || headerData.lieferscheinNr}`;
+
+        // Build rich opening message with all context
+        const affectedItems = cart.filter(c => c.qtyDamaged > 0 || c.qtyWrong > 0 || (c.qtyRejected > 0 && c.rejectionReason === 'Other'));
+        const lieferdatumFormatted = headerData.lieferdatum ? headerData.lieferdatum.split('-').reverse().join('.') : '—';
+        const erstelltAm = new Date().toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+        let messageText = `**Automatisch erstellter Qualitätsfall**\n\n`;
+        messageText += `**Bestellnummer:** ${linkedPoId || '—'}\n`;
+        messageText += `**Lieferant:** ${headerData.lieferant || '—'}\n`;
+        messageText += `**Erstellt am:** ${erstelltAm}\n`;
+        messageText += `**Lieferscheinnummer:** ${headerData.lieferscheinNr || '—'}\n`;
+        messageText += `**Lieferdatum:** ${lieferdatumFormatted}\n\n`;
+
+        affectedItems.forEach(c => {
+          const stockItem = existingItems.find(e => e.sku === c.item.sku);
+          messageText += `**Betroffenes Produkt**\n`;
+          messageText += `**Bezeichnung:** ${c.item.name}\n`;
+          messageText += `**Artikelnummer:** ${c.item.sku}\n`;
+          messageText += `**System:** ${stockItem?.system || c.item.system || '—'}\n`;
+          if (c.qtyDamaged > 0) messageText += `**Beschädigt:** ${c.qtyDamaged} Stk\n`;
+          if (c.qtyWrong > 0) messageText += `**Falsch geliefert:** ${c.qtyWrong} Stk\n`;
+          if (c.rejectionNotes) messageText += `**Notiz:** ${c.rejectionNotes}\n`;
+          messageText += `\n`;
+        });
+
         const qualityMessages: any[] = [
           { 
             id: crypto.randomUUID(), 
             author: 'System', 
-            text: `Automatisch erstellter Qualitätsfall:\n\n${qualityIssues.join('\n')}`, 
+            text: messageText.trim(), 
             timestamp: Date.now(), 
             type: 'system' 
           }
@@ -694,15 +725,15 @@ export const GoodsReceiptFlow: React.FC<GoodsReceiptFlowProps> = ({
         onAddTicket({ 
           id: crypto.randomUUID(), 
           receiptId: batchId, 
-          subject: `Qualitätsproblem: ${Array.from(qualityTypes).join(', ')} — ${linkedPoId || headerData.lieferscheinNr}`, 
+          subject: ticketSubject, 
           status: 'Open', 
           priority: 'High',
           messages: qualityMessages
         });
       }
       
-      // CREATE TICKET FOR PARTIAL DELIVERY (OFFEN > 0)
-      if (partialDeliveryIssues.length > 0) {
+      // CREATE TICKET FOR PARTIAL DELIVERY (OFFEN > 0) — Skip if quality ticket already covers this
+      if (partialDeliveryIssues.length > 0 && qualityIssues.length === 0) {
         const totalOffen = cart.reduce((sum, c) => sum + getLineCalc(c).offen, 0);
         onAddTicket({
           id: crypto.randomUUID(),
