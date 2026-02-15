@@ -7,7 +7,7 @@ import {
   AlertCircle, CheckCircle2, ChevronDown, ChevronUp, FileText, Truck,
   BarChart3, Ban, Archive, Briefcase, Info, PackagePlus,
   AlertTriangle, Layers, XCircle, ClipboardCheck,
-  Undo2, MessageSquare, AlertOctagon, Box, Lock, LogOut, ChevronsDown, RotateCcw, MoreVertical
+  Undo2, MessageSquare, AlertOctagon, Box, Lock, LogOut, ChevronsDown, RotateCcw, MoreVertical, CheckSquare, Square
 } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { ReceiptHeader, ReceiptItem, Theme, ReceiptComment, Ticket, PurchaseOrder, ReceiptMaster, DeliveryLog, ActiveModule, StockItem } from '../types';
@@ -40,7 +40,8 @@ type ReceiptListRow = ReceiptHeader & {
     isGroup?: boolean;
     deliveryCount?: number;
     masterStatus?: string;
-    subHeaders?: ReceiptHeader[]; // For search reference
+    subHeaders?: ReceiptHeader[];
+    isArchived?: boolean;
 };
 
 // Filter Types
@@ -90,7 +91,15 @@ export const ReceiptManagement: React.FC<ReceiptManagementProps> = ({
 
   // Mobile action menu state
   const [showMobileActionMenu, setShowMobileActionMenu] = useState<string | null>(null)
-  const [showCloseConfirm, setShowCloseConfirm] = useState(false);
+  const [showCloseConfirm, setShowCloseConfirm] = useState(false)
+  const [showArchived, setShowArchived] = useState(false)
+  const [archivedReceiptGroups, setArchivedReceiptGroups] = useState<Set<string>>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('archivedReceiptGroups');
+      if (saved) return new Set(JSON.parse(saved));
+    }
+    return new Set();
+  });
   const [problemConfirmPO, setProblemConfirmPO] = useState<PurchaseOrder | null>(null);
   const [returnPickerPO, setReturnPickerPO] = useState<PurchaseOrder | null>(null);
   // New State: Delivery List Popover
@@ -183,7 +192,8 @@ export const ReceiptManagement: React.FC<ReceiptManagementProps> = ({
               isGroup: true,
               deliveryCount: deliveryCount,
               masterStatus: master ? master.status : latest.status,
-              subHeaders: groupHeaders
+              subHeaders: groupHeaders,
+              isArchived: archivedReceiptGroups.has(poId)
           });
       });
 
@@ -192,12 +202,13 @@ export const ReceiptManagement: React.FC<ReceiptManagementProps> = ({
               ...h,
               isGroup: false,
               deliveryCount: 1,
-              masterStatus: h.status
+              masterStatus: h.status,
+              isArchived: archivedReceiptGroups.has(h.batchId)
           });
       });
 
       return result.sort((a, b) => b.timestamp - a.timestamp);
-  }, [headers, receiptMasters]);
+  }, [headers, receiptMasters, archivedReceiptGroups]);
 
   // --- FILTER HELPERS ---
   const getCategory = (row: ReceiptListRow): FilterStatus => {
@@ -236,6 +247,7 @@ export const ReceiptManagement: React.FC<ReceiptManagementProps> = ({
   const categoryCounts = useMemo(() => {
       const counts = { all: 0, pending: 0, issues: 0, completed: 0 };
       groupedRows.forEach(row => {
+          if (row.isArchived) return;
           counts.all++;
           const cat = getCategory(row);
           if (counts[cat] !== undefined) counts[cat]++;
@@ -246,6 +258,9 @@ export const ReceiptManagement: React.FC<ReceiptManagementProps> = ({
   // 2. Filter Logic
   const filteredRows = useMemo(() => {
     return groupedRows.filter(row => {
+      // 0. Archive Filter
+      if (row.isArchived && !showArchived) return false;
+
       // 1. Status Filter (Smart Categories)
       if (statusFilter !== 'all') {
           const category = getCategory(row);
@@ -291,7 +306,7 @@ export const ReceiptManagement: React.FC<ReceiptManagementProps> = ({
 
       return true;
     });
-  }, [groupedRows, searchTerm, statusFilter, dateFrom, dateTo, filterUser, tickets, headers]);
+  }, [groupedRows, searchTerm, statusFilter, dateFrom, dateTo, filterUser, tickets, headers, showArchived]);
 
   // ... (Snapshot Logic Omitted - Same as before)
   const deliverySnapshots = useMemo(() => {
@@ -347,6 +362,16 @@ export const ReceiptManagement: React.FC<ReceiptManagementProps> = ({
 
   const handleBack = () => {
     setSelectedBatchId(null);
+  };
+
+  const handleArchiveReceipt = (row: ReceiptListRow) => {
+    const key = row.isGroup && row.bestellNr ? row.bestellNr : row.batchId;
+    setArchivedReceiptGroups(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key); else next.add(key);
+      localStorage.setItem('archivedReceiptGroups', JSON.stringify([...next]));
+      return next;
+    });
   };
 
   const handleForceClose = () => {
@@ -666,6 +691,29 @@ export const ReceiptManagement: React.FC<ReceiptManagementProps> = ({
         onClick: (e: React.MouseEvent) => { e.stopPropagation(); setShowCloseConfirm(true); },
         variant: 'ghost',
         tooltip: 'Abschließen'
+      });
+    }
+
+    // ARCHIVE BUTTON - Always available
+    if (activeHeader) {
+      const rowForArchive: ReceiptListRow = { ...(activeHeader as ReceiptListRow) };
+      const isCurrentlyArchived = rowForArchive.isArchived || archivedReceiptGroups.has(activeHeader.bestellNr || activeHeader.batchId);
+      actions.push({
+        key: 'archive',
+        label: isCurrentlyArchived ? 'Aus Archiv holen' : 'Archivieren',
+        icon: Archive,
+        onClick: (e: React.MouseEvent) => {
+          e.stopPropagation();
+          const key = activeHeader.bestellNr || activeHeader.batchId;
+          setArchivedReceiptGroups(prev => {
+            const next = new Set(prev);
+            if (next.has(key)) next.delete(key); else next.add(key);
+            localStorage.setItem('archivedReceiptGroups', JSON.stringify([...next]));
+            return next;
+          });
+        },
+        variant: 'ghost',
+        tooltip: isCurrentlyArchived ? 'Archivierung aufheben' : 'In Archiv verschieben'
       });
     }
 
@@ -1049,6 +1097,16 @@ export const ReceiptManagement: React.FC<ReceiptManagementProps> = ({
             </div>
 
             <button 
+              onClick={() => setShowArchived(!showArchived)}
+              className={`px-4 py-3 md:py-0 rounded-xl border flex items-center justify-center gap-2 font-bold transition-all whitespace-nowrap ${
+                isDark ? 'bg-slate-900 border-slate-800 hover:bg-slate-800' : 'bg-white border-slate-200 hover:bg-slate-50'
+              } ${showArchived ? 'text-[#0077B5] border-[#0077B5]/30' : (isDark ? 'text-slate-400' : 'text-slate-500')}`}
+            >
+              {showArchived ? <CheckSquare size={18} /> : <Square size={18} />}
+              <span>Archivierte</span>
+            </button>
+
+            <button 
               onClick={() => setShowFilters(!showFilters)}
               className={`px-4 py-3 md:py-0 rounded-xl border flex items-center justify-center gap-2 font-bold transition-all ${
                 showFilters 
@@ -1120,7 +1178,7 @@ export const ReceiptManagement: React.FC<ReceiptManagementProps> = ({
                    <div
                      key={row.batchId}
                      onClick={() => handleOpenDetail(row)}
-                     className={`p-4 cursor-pointer transition-colors ${isDark ? 'hover:bg-slate-800 active:bg-slate-700' : 'hover:bg-slate-50 active:bg-slate-100'}`}
+                     className={`p-4 cursor-pointer transition-colors ${row.isArchived ? (isDark ? 'bg-slate-900/50 opacity-60 hover:bg-slate-800/50' : 'bg-slate-50 opacity-60 hover:bg-slate-100') : (isDark ? 'hover:bg-slate-800 active:bg-slate-700' : 'hover:bg-slate-50 active:bg-slate-100')}`}
                    >
                      <div className="flex items-center gap-2 mb-3 flex-wrap">
                        <ReceiptStatusBadges header={row} master={linkedMaster} linkedPO={linkedPO} tickets={rowTickets} theme={theme} />
@@ -1195,7 +1253,7 @@ export const ReceiptManagement: React.FC<ReceiptManagementProps> = ({
                     <tr 
                       key={row.batchId} 
                       onClick={() => handleOpenDetail(row)}
-                      className={`cursor-pointer transition-colors ${isDark ? 'hover:bg-slate-800' : 'hover:bg-slate-50'}`}
+                      className={`cursor-pointer transition-colors ${row.isArchived ? (isDark ? 'bg-slate-900/50 opacity-60 hover:bg-slate-800/50' : 'bg-slate-50 opacity-60 hover:bg-slate-100') : (isDark ? 'hover:bg-slate-800' : 'hover:bg-slate-50')}`}
                     >
                       <td className="p-4">
                         {/* USE CONSISTENT BADGE COMPONENT */}
