@@ -470,11 +470,22 @@ export const GoodsReceiptFlow: React.FC<GoodsReceiptFlowProps> = ({
           if (total < poItem.quantityExpected) anyUnder = true;
           if (total > poItem.quantityExpected) anyOver = true;
         }
+        // Quality issues take priority
+        const hasDamage = currentCart.some(c => c.qtyDamaged > 0);
+        const hasWrong = currentCart.some(c => c.qtyWrong > 0);
+        if (hasDamage && hasWrong) return 'Schaden + Falsch';
+        if (hasDamage) return 'Schaden';
+        if (hasWrong) return 'Falsch geliefert';
         if (anyOver) return 'Übermenge';
         if (anyUnder || currentCart.some(c => c.qtyRejected > 0)) return 'Teillieferung';
         return 'Gebucht';
       }
     }
+    const hasDamage = currentCart.some(c => c.qtyDamaged > 0);
+    const hasWrong = currentCart.some(c => c.qtyWrong > 0);
+    if (hasDamage && hasWrong) return 'Schaden + Falsch';
+    if (hasDamage) return 'Schaden';
+    if (hasWrong) return 'Falsch geliefert';
     return currentCart.some(c => c.qtyRejected > 0) ? 'Teillieferung' : 'Gebucht';
   };
 

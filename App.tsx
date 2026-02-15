@@ -537,7 +537,7 @@ export default function App() {
              });
 
              // Apply Logic: Only override if it's not already a critical error status
-             const isErrorStatus = ['Abgelehnt', 'Schaden', 'Schaden + Falsch', 'Falsch geliefert', 'BeschÃ¤digt'].includes(finalReceiptStatus);
+             const isErrorStatus = ['Abgelehnt', 'Schaden', 'Schaden + Falsch', 'Falsch geliefert', 'Beschädigt', 'Übermenge'].includes(finalReceiptStatus);
              
              if (!isErrorStatus) {
                  if (forceClose) {
