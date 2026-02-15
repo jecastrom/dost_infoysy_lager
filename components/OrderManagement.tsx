@@ -257,6 +257,16 @@ export const OrderManagement: React.FC<OrderManagementProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectedOrder, confirmModalOpen, isEditingLink, activeMenuId]);
 
+  // Lock body scroll when any dropdown menu is open (prevents scrollbar jump)
+  useEffect(() => {
+    if (activeMenuId) {
+        document.body.style.overflow = 'hidden';
+    } else {
+        document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [activeMenuId]);
+
   // Reset link state when opening modal
   useEffect(() => {
       if (selectedOrder) {
