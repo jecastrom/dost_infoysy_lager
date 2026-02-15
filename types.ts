@@ -155,6 +155,7 @@ export interface TicketMessage {
   text: string;
   timestamp: number;
   type: TicketMessageType;
+  label?: 'note' | 'email' | 'call'; // Message category label
 }
 
 export interface Ticket {

@@ -121,6 +121,8 @@ export const TicketSystem: React.FC<TicketSystemProps> = ({
   // Date Grouping & UI State
   const [collapsedDates, setCollapsedDates] = useState<Set<string>>(new Set());
   const [showSendOptions, setShowSendOptions] = useState(false);
+  const [msgLabel, setMsgLabel] = useState<'note' | 'email' | 'call'>('note');
+  const [popoutMsgLabel, setPopoutMsgLabel] = useState<'note' | 'email' | 'call'>('note');
   const [popoutTicketId, setPopoutTicketId] = useState<string | null>(null);
   const [popoutReply, setPopoutReply] = useState('');
   const [popoutSize, setPopoutSize] = useState({ w: 680, h: 520 });
@@ -276,7 +278,8 @@ export const TicketSystem: React.FC<TicketSystemProps> = ({
               author: 'Admin User',
               text: text,
               timestamp: Date.now(),
-              type: 'user'
+              type: 'user',
+              label: msgLabel
           });
       }
 
@@ -299,6 +302,7 @@ export const TicketSystem: React.FC<TicketSystemProps> = ({
       onUpdateTicket(updatedTicket);
       setReplyText('');
       setShowSendOptions(false);
+      setMsgLabel('note');
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -338,7 +342,7 @@ export const TicketSystem: React.FC<TicketSystemProps> = ({
       const text = popoutReply.trim();
       if (!shouldClose && !text) return;
       let msgs = [...popoutTicket.messages];
-      if (text) msgs.push({ id: crypto.randomUUID(), author: 'Admin User', text, timestamp: Date.now(), type: 'user' });
+      if (text) msgs.push({ id: crypto.randomUUID(), author: 'Admin User', text, timestamp: Date.now(), type: 'user', label: popoutMsgLabel });
       if (shouldClose) msgs.push({ id: crypto.randomUUID(), author: 'System', text: 'Fall wurde geschlossen.', timestamp: Date.now() + (text ? 1 : 0), type: 'system' });
       onUpdateTicket({ ...popoutTicket, messages: msgs, status: shouldClose ? 'Closed' : popoutTicket.status });
       setPopoutReply('');
@@ -599,6 +603,13 @@ export const TicketSystem: React.FC<TicketSystemProps> = ({
                                                                     ? 'bg-[#0077B5] text-white rounded-tr-none' 
                                                                     : (isDark ? 'bg-slate-800 text-slate-200 border border-slate-700 rounded-tl-none' : 'bg-white text-slate-800 border border-slate-200 rounded-tl-none')
                                                                 }`}>
+                                                                    {msg.label && (
+                                                                        <span className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider mb-1 ${isMe ? 'text-blue-200' : (isDark ? 'text-slate-400' : 'text-slate-400')}`}>
+                                                                            {msg.label === 'email' && <><MessageSquare size={9} /> Email</>}
+                                                                            {msg.label === 'call' && <><Clock size={9} /> Tel.</>}
+                                                                        </span>
+                                                                    )}
+                                                                    {msg.label && msg.label !== 'note' && <br />}
                                                                     {msg.text}
                                                                 </div>
                                                             </div>
@@ -623,6 +634,17 @@ export const TicketSystem: React.FC<TicketSystemProps> = ({
                         {selectedTicket.status === 'Open' ? (
                             <div className={`flex-none p-4 border-t ${isDark ? 'bg-[#1e293b] border-slate-800' : 'bg-white border-slate-200'}`}>
                                 <div className={`flex flex-col rounded-xl border focus-within:ring-2 focus-within:ring-[#0077B5]/30 transition-all ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
+                                    <div className="flex gap-1.5 px-3 pt-2">
+                                        {([['note', 'Notiz', <MessageSquare size={12} key="n" />], ['email', 'Email', <FileText size={12} key="e" />], ['call', 'Tel.', <Clock size={12} key="c" />]] as const).map(([val, lbl, ico]) => (
+                                            <button key={val} type="button" onClick={() => setMsgLabel(val as 'note'|'email'|'call')}
+                                                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all border ${
+                                                    msgLabel === val
+                                                    ? 'bg-[#0077B5] text-white border-[#0077B5]'
+                                                    : (isDark ? 'bg-transparent border-slate-700 text-slate-400 hover:border-slate-500' : 'bg-white border-slate-300 text-slate-500 hover:border-slate-400')
+                                                }`}
+                                            >{ico} {lbl}</button>
+                                        ))}
+                                    </div>
                                     <textarea 
                                         value={replyText}
                                         onChange={(e) => setReplyText(e.target.value)}
@@ -773,7 +795,18 @@ export const TicketSystem: React.FC<TicketSystemProps> = ({
                     {popoutTicket.status === 'Open' && (
                         <div className={`flex-none p-3 border-t ${isDark ? 'bg-[#1e293b] border-slate-800' : 'bg-white border-slate-200'}`}>
                             <div className={`flex flex-col rounded-xl border focus-within:ring-2 focus-within:ring-[#0077B5]/30 transition-all ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
-                               <textarea
+                               <div className="flex gap-1.5 px-3 pt-2">
+                                    {([['note', 'Notiz', <MessageSquare size={12} key="n" />], ['email', 'Email', <FileText size={12} key="e" />], ['call', 'Tel.', <Clock size={12} key="c" />]] as const).map(([val, lbl, ico]) => (
+                                        <button key={val} type="button" onClick={() => setPopoutMsgLabel(val as 'note'|'email'|'call')}
+                                            className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all border ${
+                                                popoutMsgLabel === val
+                                                ? 'bg-[#0077B5] text-white border-[#0077B5]'
+                                                : (isDark ? 'bg-transparent border-slate-700 text-slate-400 hover:border-slate-500' : 'bg-white border-slate-300 text-slate-500 hover:border-slate-400')
+                                            }`}
+                                        >{ico} {lbl}</button>
+                                    ))}
+                                </div>
+                                <textarea
                                     value={popoutReply}
                                     onChange={e => setPopoutReply(e.target.value)}
                                     onKeyDown={e => { if ((e.ctrlKey||e.metaKey) && e.shiftKey && e.key === 'Enter' && popoutReply.trim()) { e.preventDefault(); handlePopoutReply(true); setShowPopoutSendOptions(false); } else if ((e.ctrlKey||e.metaKey) && e.key === 'Enter' && popoutReply.trim()) { e.preventDefault(); handlePopoutReply(false); }}}
