@@ -315,19 +315,22 @@ export const OrderManagement: React.FC<OrderManagementProps> = ({
           setActiveMenuId(null);
       } else {
           const rect = e.currentTarget.getBoundingClientRect();
-          const scrollY = window.scrollY; // Get current scroll position
+          const vw = document.documentElement.clientWidth;
+          const vh = window.innerHeight;
           
           if (id === 'modal') {
-              // Modal menu: Use fixed positioning logic relative to viewport
+              // Modal: open UPWARD from button
               setMenuPos({ 
                   top: rect.top,
-                  right: document.body.clientWidth - rect.right
+                  right: vw - rect.right
               });
           } else {
-              // Table menu: Use FIXED positioning (Viewport relative) to prevent scroll jumps
+              // Card/Table: open DOWNWARD, but clamp to viewport
+              const dropdownHeight = 280; // estimated max menu height
+              const wouldOverflow = rect.bottom + dropdownHeight > vh;
               setMenuPos({ 
-                  top: rect.bottom, 
-                  right: document.body.clientWidth - rect.right 
+                  top: wouldOverflow ? rect.top - dropdownHeight : rect.bottom,
+                  right: Math.max(8, vw - rect.right)
               });
           }
           setActiveMenuId(id);
@@ -458,11 +461,6 @@ export const OrderManagement: React.FC<OrderManagementProps> = ({
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
-      
-      {/* Overlay for Click Outside */}
-      {activeMenuId && (
-          <div className="fixed inset-0 z-40 cursor-default" onClick={() => setActiveMenuId(null)} />
-      )}
 
       {/* Header */}
       <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
@@ -592,36 +590,39 @@ export const OrderManagement: React.FC<OrderManagementProps> = ({
 
                    {/* PORTAL FOR DROPDOWN */}
                    {isMenuOpen && createPortal(
-                     <div 
-                       style={{ top: menuPos.top, right: menuPos.right }}
-                       className={`fixed z-50 w-56 rounded-xl shadow-xl border p-1 animate-in fade-in zoom-in-95 duration-100 origin-top-right ${
-                         isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'
-                       }`}
-                       onClick={(e) => e.stopPropagation()}
-                     >
-                       <div className="flex flex-col gap-0.5">
-                         <MenuItem icon={Eye} label="Details ansehen" onClick={() => { setSelectedOrder(order); setActiveMenuId(null); }} />
-                         
-                         {!order.isArchived && !isDone && order.status !== 'Storniert' && (
-                           <>
-                             <MenuItem icon={ClipboardCheck} label="Wareneingang prüfen" onClick={() => handleReceiveClick(order.id)} />
-                             {!order.linkedReceiptId && (
-                               <MenuItem icon={PackagePlus} label="Schnell-Buchung" onClick={() => handleQuickReceiptClick(order.id)} />
-                             )}
-                             <div className={`h-px my-1 ${isDark ? 'bg-slate-700' : 'bg-slate-100'}`}></div>
-                             <MenuItem icon={Edit2} label="Bearbeiten" onClick={() => handleEditClick(order)} />
-                           </>
-                         )}
+                     <>
+                       <div className="fixed inset-0 z-[9998]" onClick={(e) => { e.stopPropagation(); setActiveMenuId(null); }} />
+                       <div 
+                         style={{ top: menuPos.top, right: menuPos.right }}
+                         className={`fixed z-[9999] w-56 rounded-xl shadow-xl border p-1 animate-in fade-in zoom-in-95 duration-100 origin-top-right ${
+                           isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'
+                         }`}
+                         onClick={(e) => e.stopPropagation()}
+                       >
+                         <div className="flex flex-col gap-0.5">
+                           <MenuItem icon={Eye} label="Details ansehen" onClick={() => { setSelectedOrder(order); setActiveMenuId(null); }} />
+                           
+                           {!order.isArchived && !isDone && order.status !== 'Storniert' && (
+                             <>
+                               <MenuItem icon={ClipboardCheck} label="Wareneingang prüfen" onClick={() => handleReceiveClick(order.id)} />
+                               {!order.linkedReceiptId && (
+                                 <MenuItem icon={PackagePlus} label="Schnell-Buchung" onClick={() => handleQuickReceiptClick(order.id)} />
+                               )}
+                               <div className={`h-px my-1 ${isDark ? 'bg-slate-700' : 'bg-slate-100'}`}></div>
+                               <MenuItem icon={Edit2} label="Bearbeiten" onClick={() => handleEditClick(order)} />
+                             </>
+                           )}
 
-                         {!order.isArchived && !isDone && order.status !== 'Storniert' && totalReceived === 0 && (
-                           <MenuItem icon={Ban} label="Stornieren" onClick={() => handleCancelOrderClick(order.id)} danger />
-                         )}
+                           {!order.isArchived && !isDone && order.status !== 'Storniert' && totalReceived === 0 && (
+                             <MenuItem icon={Ban} label="Stornieren" onClick={() => handleCancelOrderClick(order.id)} danger />
+                           )}
 
-                         {!order.isArchived && (
-                           <MenuItem icon={Archive} label="Archivieren" onClick={() => handleArchiveClick(order.id)} />
-                         )}
+                           {!order.isArchived && (
+                             <MenuItem icon={Archive} label="Archivieren" onClick={() => handleArchiveClick(order.id)} />
+                           )}
+                         </div>
                        </div>
-                     </div>,
+                     </>,
                      document.body
                    )}
                  </div>
@@ -696,37 +697,39 @@ export const OrderManagement: React.FC<OrderManagementProps> = ({
                         
                         {/* PORTAL FOR DROPDOWN TO PREVENT CLIPPING */}
                         {isMenuOpen && createPortal(
-                            <div 
-                                style={{ top: menuPos.top, right: menuPos.right }}
-                                // Use 'absolute' for table rows (prevents jumping) and 'fixed' for modal headers
-                                className={`fixed z-[9999] w-56 rounded-xl shadow-xl border p-1 animate-in fade-in zoom-in-95 duration-100 origin-top-right ${
-                                    isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'
-                                }`}
-                                onClick={(e) => e.stopPropagation()}
-                            >
-                                <div className="flex flex-col gap-0.5">
-                                    <MenuItem icon={Eye} label="Details ansehen" onClick={() => { setSelectedOrder(order); setActiveMenuId(null); }} />
-                                    
-                                    {!order.isArchived && !isDone && order.status !== 'Storniert' && (
-                                        <>
-                                            <MenuItem icon={ClipboardCheck} label="Wareneingang prüfen" onClick={() => handleReceiveClick(order.id)} />
-                                            {!order.linkedReceiptId && (
-                                                <MenuItem icon={PackagePlus} label="Schnell-Buchung" onClick={() => handleQuickReceiptClick(order.id)} />
-                                            )}
-                                            <div className={`h-px my-1 ${isDark ? 'bg-slate-700' : 'bg-slate-100'}`}></div>
-                                            <MenuItem icon={Edit2} label="Bearbeiten" onClick={() => handleEditClick(order)} />
-                                        </>
-                                    )}
+                            <>
+                                <div className="fixed inset-0 z-[9998]" onClick={(e) => { e.stopPropagation(); setActiveMenuId(null); }} />
+                                <div 
+                                    style={{ top: menuPos.top, right: menuPos.right }}
+                                    className={`fixed z-[9999] w-56 rounded-xl shadow-xl border p-1 animate-in fade-in zoom-in-95 duration-100 origin-top-right ${
+                                        isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'
+                                    }`}
+                                    onClick={(e) => e.stopPropagation()}
+                                >
+                                    <div className="flex flex-col gap-0.5">
+                                        <MenuItem icon={Eye} label="Details ansehen" onClick={() => { setSelectedOrder(order); setActiveMenuId(null); }} />
+                                        
+                                        {!order.isArchived && !isDone && order.status !== 'Storniert' && (
+                                            <>
+                                                <MenuItem icon={ClipboardCheck} label="Wareneingang prüfen" onClick={() => handleReceiveClick(order.id)} />
+                                                {!order.linkedReceiptId && (
+                                                    <MenuItem icon={PackagePlus} label="Schnell-Buchung" onClick={() => handleQuickReceiptClick(order.id)} />
+                                                )}
+                                                <div className={`h-px my-1 ${isDark ? 'bg-slate-700' : 'bg-slate-100'}`}></div>
+                                                <MenuItem icon={Edit2} label="Bearbeiten" onClick={() => handleEditClick(order)} />
+                                            </>
+                                        )}
 
-                                    {!order.isArchived && !isDone && order.status !== 'Storniert' && totalReceived === 0 && (
-                                        <MenuItem icon={Ban} label="Stornieren" onClick={() => handleCancelOrderClick(order.id)} danger />
-                                    )}
+                                        {!order.isArchived && !isDone && order.status !== 'Storniert' && totalReceived === 0 && (
+                                            <MenuItem icon={Ban} label="Stornieren" onClick={() => handleCancelOrderClick(order.id)} danger />
+                                        )}
 
-                                    {!order.isArchived && (
-                                        <MenuItem icon={Archive} label="Archivieren" onClick={() => handleArchiveClick(order.id)} />
-                                    )}
+                                        {!order.isArchived && (
+                                            <MenuItem icon={Archive} label="Archivieren" onClick={() => handleArchiveClick(order.id)} />
+                                        )}
+                                    </div>
                                 </div>
-                            </div>, document.body)
+                            </>, document.body)
                         }
                     </td>
                   </tr>
@@ -1005,12 +1008,12 @@ export const OrderManagement: React.FC<OrderManagementProps> = ({
                                 <>
                                     {/* Backdrop */}
                                     <div 
-                                        className="fixed inset-0 z-[250]" 
+                                        className="fixed inset-0 z-[9998]" 
                                         onClick={() => setActiveMenuId(null)}
                                     />
                                     {/* Menu */}
                                     <div 
-                                        className={`fixed z-[251] w-64 rounded-xl shadow-2xl border p-2 animate-in fade-in zoom-in-95 duration-150 origin-bottom-right ${
+                                        className={`fixed z-[9999] w-64 rounded-xl shadow-2xl border p-2 animate-in fade-in zoom-in-95 duration-150 origin-bottom-right ${
                                             isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'
                                         }`}
                                         style={{
