@@ -675,7 +675,7 @@ export const ReceiptManagement: React.FC<ReceiptManagementProps> = ({
     return (
       <div className="relative">
         <button
-          data-receipt-actions-menu
+          data-receipt-actions-menu={thisMenuKey}
           onClick={(e) => { e.stopPropagation(); setShowMobileActionMenu(showMobileActionMenu === thisMenuKey ? null : thisMenuKey); }}
           className={`px-4 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 transition-all border ${
             showMobileActionMenu
@@ -695,7 +695,7 @@ export const ReceiptManagement: React.FC<ReceiptManagementProps> = ({
                 isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'
               }`}
               style={(() => {
-                const btn = document.querySelector('[data-receipt-actions-menu]');
+                const btn = document.querySelector(`[data-receipt-actions-menu="${thisMenuKey}"]`);
                 if (btn) {
                   const rect = btn.getBoundingClientRect();
                   const vw = document.documentElement.clientWidth;
