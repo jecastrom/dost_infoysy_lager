@@ -1668,18 +1668,18 @@ export const ReceiptManagement: React.FC<ReceiptManagementProps> = ({
                                                         {renderItemStatusIconForPO(ordered, received, hasIssues, linkedPO.isForceClosed, isProject, isMasterClosed)}
                                                     </div>
                                                     <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
-                                                        <div className="flex justify-between">
+                                                        <div className="flex justify-between items-baseline">
                                                             <span className={`text-[10px] uppercase font-bold tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Bestellt</span>
-                                                            <span className="font-mono font-bold opacity-70">{ordered}</span>
+                                                            <span className="font-mono font-bold opacity-70 md:text-lg">{ordered}</span>
                                                         </div>
-                                                        <div className="flex justify-between">
+                                                        <div className="flex justify-between items-baseline">
                                                             <span className={`text-[10px] uppercase font-bold tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Geliefert</span>
-                                                            <span className="font-mono font-bold">{received}</span>
+                                                            <span className="font-mono font-bold md:text-lg">{received}</span>
                                                         </div>
                                                         {pending > 0 && (
-                                                            <div className="flex justify-between">
+                                                            <div className="flex justify-between items-baseline">
                                                                 <span className="text-[10px] uppercase font-bold tracking-wider text-amber-500 flex items-center gap-1"><AlertTriangle size={10}/> Offen</span>
-                                                                <span className="font-mono font-bold text-amber-500">{linkedPO.isForceClosed ? <span className="line-through text-slate-400">{pending}</span> : pending}</span>
+                                                                <span className="font-mono font-bold text-amber-500 md:text-lg">{linkedPO.isForceClosed ? <span className="line-through text-slate-400">{pending}</span> : pending}</span>
                                                             </div>
                                                         )}
                                                         {over > 0 && (
@@ -1894,7 +1894,7 @@ export const ReceiptManagement: React.FC<ReceiptManagementProps> = ({
                                 }`}>
                                     {c.type === 'email' && <Mail size={12} className="text-blue-500" />}
                                     {c.type === 'call' && <Phone size={12} className="text-purple-500" />}
-                                    {c.type === 'note' && <StickyNote size={12} className="text-amber-500" />}
+                                    {c.type === 'note' && <MessageSquare size={12} className="text-amber-500" />}
                                 </div>
                                 <div className="space-y-1">
                                     <div className="flex justify-between items-start text-xs">

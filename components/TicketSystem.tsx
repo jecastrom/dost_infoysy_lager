@@ -307,7 +307,7 @@ export const TicketSystem: React.FC<TicketSystemProps> = ({
   // --- Layout Classes ---
   const containerClass = `flex flex-col h-full ${isDark ? 'bg-[#0b1120]' : 'bg-gray-50'}`;
   
-  const topBarClass = `flex-none h-10 border-b flex items-center px-4 gap-4 shadow-sm z-10 ${
+  const topBarClass = `flex-none h-8 border-b flex items-center px-4 gap-4 z-10 ${
       isDark ? 'bg-[#1e293b] border-slate-800' : 'bg-white border-slate-200'
   }`;
 
@@ -444,7 +444,7 @@ export const TicketSystem: React.FC<TicketSystemProps> = ({
                 {selectedTicket ? (
                     <>
                         {/* Chat Header - Compact Row Layout */}
-                        <div className={`flex-none p-3 border-b flex items-center justify-between gap-3 ${isDark ? 'bg-[#1e293b] border-slate-800' : 'bg-white border-slate-200'}`}>
+                        <div className={`flex-none px-3 py-2 border-b flex items-center justify-between gap-3 ${isDark ? 'bg-[#1e293b] border-slate-800' : 'bg-white border-slate-200'}`}>
                             <div className="flex items-center gap-3 min-w-0">
                                 <h2 className={`text-base font-bold truncate ${isDark ? 'text-white' : 'text-slate-900'}`}>
                                     {selectedTicket.subject}
@@ -486,7 +486,7 @@ export const TicketSystem: React.FC<TicketSystemProps> = ({
                                         
                                         {/* Sticky Date Header */}
                                         <div 
-                                            className="sticky top-0 z-10 my-4 flex items-center gap-4 cursor-pointer group select-none"
+                                            className="sticky top-0 z-10 my-2 flex items-center gap-4 cursor-pointer group select-none"
                                             onClick={() => toggleDateCollapse(dateKey)}
                                         >
                                             <div className={`h-px flex-1 transition-colors ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`}></div>
@@ -503,7 +503,7 @@ export const TicketSystem: React.FC<TicketSystemProps> = ({
 
                                         {/* Messages Group */}
                                         {!isCollapsed && (
-                                            <div className="space-y-4 pb-2">
+                                            <div className="space-y-2 pb-2">
                                                 {messages.map((msg, index) => {
                                                     const isSystem = msg.type === 'system' || msg.author === 'System';
                                                     const isMe = msg.type === 'user' && msg.author !== 'System';
@@ -519,7 +519,7 @@ export const TicketSystem: React.FC<TicketSystemProps> = ({
                                                                 }`}>
                                                                     {isFirst ? 'Automatische Nachricht' : 'System'}
                                                                 </span>
-                                                                <p className={`mt-2 text-xs text-center max-w-md ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                                                                <p className={`mt-1 text-xs text-center max-w-md ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                                                                     {msg.text}
                                                                 </p>
                                                                 <span className={`mt-1 text-[10px] font-mono opacity-50 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
@@ -533,12 +533,12 @@ export const TicketSystem: React.FC<TicketSystemProps> = ({
                                                         <div key={msg.id} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
                                                             <div className="flex items-end gap-2 max-w-[85%]">
                                                                 {!isMe && (
-                                                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 border ${isDark ? 'bg-slate-800 border-slate-700 text-slate-400' : 'bg-white border-slate-200 text-slate-600'}`}>
-                                                                        <User size={14} />
+                                                                    <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 border ${isDark ? 'bg-slate-800 border-slate-700 text-slate-400' : 'bg-white border-slate-200 text-slate-600'}`}>
+                                                                        <User size={12} />
                                                                     </div>
                                                                 )}
                                                                 
-                                                                <div className={`p-3 rounded-2xl text-sm shadow-sm leading-relaxed whitespace-pre-wrap ${
+                                                                <div className={`px-3 py-2 rounded-xl text-sm leading-snug whitespace-pre-wrap ${
                                                                     isMe 
                                                                     ? 'bg-[#0077B5] text-white rounded-tr-none' 
                                                                     : (isDark ? 'bg-slate-800 text-slate-200 border border-slate-700 rounded-tl-none' : 'bg-white text-slate-800 border border-slate-200 rounded-tl-none')
@@ -547,7 +547,7 @@ export const TicketSystem: React.FC<TicketSystemProps> = ({
                                                                 </div>
                                                             </div>
                                                             
-                                                            <div className={`flex items-center gap-1 mt-1 text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-400'} ${isMe ? 'mr-1' : 'ml-11'}`}>
+                                                            <div className={`flex items-center gap-1 mt-0.5 text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-400'} ${isMe ? 'mr-1' : 'ml-8'}`}>
                                                                 <span className="font-bold">{msg.author}</span>
                                                                 <span>â€¢</span>
                                                                 <span className="font-mono">{new Date(msg.timestamp).toLocaleString(undefined, { hour: '2-digit', minute:'2-digit' })}</span>
