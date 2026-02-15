@@ -1506,7 +1506,16 @@ export const ReceiptManagement: React.FC<ReceiptManagementProps> = ({
                                             const received = poItem.quantityReceived;
                                             const pending = Math.max(0, ordered - received);
                                             const over = Math.max(0, received - ordered);
-                                            const hasIssues = linkedMaster.deliveries.some(d => d.items.some(di => di.sku === poItem.sku && di.damageFlag));
+                                            let totalDamaged = 0;
+                                            let totalWrong = 0;
+                                            linkedMaster.deliveries.filter(d => !d.isStorniert).forEach(d => {
+                                              const di = d.items.find(x => x.sku === poItem.sku);
+                                              if (di && di.quantityRejected > 0) {
+                                                if (di.damageFlag || di.rejectionReason === 'Damaged') totalDamaged += di.quantityRejected;
+                                                else if (di.rejectionReason === 'Wrong') totalWrong += di.quantityRejected;
+                                              }
+                                            });
+                                            const hasIssues = totalDamaged > 0 || totalWrong > 0 || linkedMaster.deliveries.some(d => !d.isStorniert && d.items.some(di => di.sku === poItem.sku && di.damageFlag));
                                             const isProject = linkedPO.status === 'Projekt';
                                             const isMasterClosed = linkedMaster?.status === 'Gebucht' || linkedMaster?.status === 'Abgeschlossen';
                                             const stockItem = findStockItemBySku(poItem.sku);
@@ -1540,6 +1549,18 @@ export const ReceiptManagement: React.FC<ReceiptManagementProps> = ({
                                                             <div className="flex justify-between">
                                                                 <span className="text-[10px] uppercase font-bold tracking-wider text-orange-500 flex items-center gap-1"><AlertTriangle size={10}/> Zu viel</span>
                                                                 <span className="font-mono font-bold text-orange-500">+{over}</span>
+                                                            </div>
+                                                        )}
+                                                        {totalDamaged > 0 && (
+                                                            <div className="flex justify-between">
+                                                                <span className="text-[10px] uppercase font-bold tracking-wider text-red-500 flex items-center gap-1"><AlertTriangle size={10}/> Beschädigt</span>
+                                                                <span className="font-mono font-bold text-red-500">{totalDamaged}</span>
+                                                            </div>
+                                                        )}
+                                                        {totalWrong > 0 && (
+                                                            <div className="flex justify-between">
+                                                                <span className="text-[10px] uppercase font-bold tracking-wider text-amber-500 flex items-center gap-1"><XCircle size={10}/> Falsch</span>
+                                                                <span className="font-mono font-bold text-amber-500">{totalWrong}</span>
                                                             </div>
                                                         )}
                                                     </div>
@@ -1656,6 +1677,8 @@ export const ReceiptManagement: React.FC<ReceiptManagementProps> = ({
                                                                                     <div className="flex justify-between"><span className="text-[10px] uppercase font-bold opacity-40">Gesamt</span><span className="font-mono font-bold">{totalReceived}</span></div>
                                                                                     {pending > 0 && <div className="flex justify-between"><span className="text-[10px] uppercase font-bold text-amber-500">Offen</span><span className="font-mono font-bold text-amber-500">{pending}</span></div>}
                                                                                     {over > 0 && <div className="flex justify-between"><span className="text-[10px] uppercase font-bold text-orange-500">Zu viel</span><span className="font-mono font-bold text-orange-500">+{over}</span></div>}
+                                                                                    {(dItem.damageFlag || dItem.rejectionReason === 'Damaged') && dItem.quantityRejected > 0 && <div className="flex justify-between"><span className="text-[10px] uppercase font-bold text-red-500">Beschädigt</span><span className="font-mono font-bold text-red-500">{dItem.quantityRejected}</span></div>}
+                                                                                    {dItem.rejectionReason === 'Wrong' && dItem.quantityRejected > 0 && <div className="flex justify-between"><span className="text-[10px] uppercase font-bold text-amber-500">Falsch</span><span className="font-mono font-bold text-amber-500">{dItem.quantityRejected}</span></div>}
                                                                                 </div>
                                                                                 {(dItem.returnCarrier || dItem.returnTrackingId) && (
                                                                                     <div className={`text-[11px] pl-2 border-l-2 ${isDark ? 'border-slate-600 text-slate-400' : 'border-slate-300 text-slate-500'}`}>
