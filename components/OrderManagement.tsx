@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { 
   Search, Filter, Calendar, Truck, ChevronRight, 
@@ -236,6 +236,16 @@ export const OrderManagement: React.FC<OrderManagementProps> = ({
   // -- Action Menu State --
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const [menuPos, setMenuPos] = useState<{ top: number; right?: number; left?: number }>({ top: 0, right: 0 });
+
+  // Fixed portal container — prevents scrollbar when portaling menus
+  const menuContainerRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const el = document.createElement('div');
+    el.style.cssText = 'position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:50;';
+    document.body.appendChild(el);
+    menuContainerRef.current = el;
+    return () => { document.body.removeChild(el); };
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -693,9 +703,9 @@ export const OrderManagement: React.FC<OrderManagementProps> = ({
                         </div>
                         
                         {/* PORTAL FOR DROPDOWN TO PREVENT CLIPPING */}
-                        {isMenuOpen && createPortal(
+                        {isMenuOpen && menuContainerRef.current && createPortal(
                             <div 
-                                style={{ top: menuPos.top, right: menuPos.right }}
+                                style={{ top: menuPos.top, right: menuPos.right, pointerEvents: 'auto' }}
                                 className={`fixed z-50 w-56 rounded-xl shadow-xl border p-1 animate-in fade-in zoom-in-95 duration-100 origin-top-right ${
                                     isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'
                                 }`}
@@ -724,7 +734,7 @@ export const OrderManagement: React.FC<OrderManagementProps> = ({
                                     )}
                                 </div>
                             </div>,
-                            document.body
+                            menuContainerRef.current
                         )}
                     </td>
                   </tr>
