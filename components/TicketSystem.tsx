@@ -121,9 +121,15 @@ export const TicketSystem: React.FC<TicketSystemProps> = ({
   // Date Grouping & UI State
   const [collapsedDates, setCollapsedDates] = useState<Set<string>>(new Set());
   const [showSendOptions, setShowSendOptions] = useState(false);
+  const [popoutTicketId, setPopoutTicketId] = useState<string | null>(null);
+  const [popoutReply, setPopoutReply] = useState('');
+  const [popoutSize, setPopoutSize] = useState({ w: 680, h: 520 });
+  const [showPopoutSendOptions, setShowPopoutSendOptions] = useState(false);
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const sendMenuRef = useRef<HTMLDivElement>(null);
+  const popoutEndRef = useRef<HTMLDivElement>(null);
 
   // Responsive: Auto-select first ticket ONLY on desktop if none selected
   useEffect(() => {
@@ -296,12 +302,58 @@ export const TicketSystem: React.FC<TicketSystemProps> = ({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'Enter') {
+          e.preventDefault();
+          if (replyText.trim() && selectedTicket) {
+              handleReplyTicket(selectedTicket, true);
+              setShowSendOptions(false);
+          }
+      } else if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
           e.preventDefault();
           if (replyText.trim() && selectedTicket) {
               handleReplyTicket(selectedTicket, false);
           }
       }
+  };
+
+  // --- Popout Modal Logic ---
+  const popoutTicket = useMemo(() => tickets.find(t => t.id === popoutTicketId), [tickets, popoutTicketId]);
+
+  const popoutGrouped = useMemo<Record<string, TicketMessage[]>>(() => {
+      if (!popoutTicket) return {};
+      const groups: Record<string, TicketMessage[]> = {};
+      [...popoutTicket.messages].sort((a,b) => a.timestamp - b.timestamp).forEach(msg => {
+          const key = new Date(msg.timestamp).toLocaleDateString('en-CA');
+          if (!groups[key]) groups[key] = [];
+          groups[key].push(msg);
+      });
+      return groups;
+  }, [popoutTicket]);
+
+  useEffect(() => { popoutEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [popoutTicket?.messages]);
+  useEffect(() => { setPopoutReply(''); setShowPopoutSendOptions(false); }, [popoutTicketId]);
+
+  const handlePopoutReply = (shouldClose: boolean) => {
+      if (!popoutTicket) return;
+      const text = popoutReply.trim();
+      if (!shouldClose && !text) return;
+      let msgs = [...popoutTicket.messages];
+      if (text) msgs.push({ id: crypto.randomUUID(), author: 'Admin User', text, timestamp: Date.now(), type: 'user' });
+      if (shouldClose) msgs.push({ id: crypto.randomUUID(), author: 'System', text: 'Fall wurde geschlossen.', timestamp: Date.now() + (text ? 1 : 0), type: 'system' });
+      onUpdateTicket({ ...popoutTicket, messages: msgs, status: shouldClose ? 'Closed' : popoutTicket.status });
+      setPopoutReply('');
+  };
+
+  const handleResizeStart = (e: React.MouseEvent) => {
+      e.preventDefault();
+      const startX = e.clientX, startY = e.clientY;
+      const startW = popoutSize.w, startH = popoutSize.h;
+      const onMove = (ev: MouseEvent) => {
+          setPopoutSize({ w: Math.max(400, startW + (ev.clientX - startX) * 2), h: Math.max(360, startH + (ev.clientY - startY) * 2) });
+      };
+      const onUp = () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); };
+      window.addEventListener('mousemove', onMove);
+      window.addEventListener('mouseup', onUp);
   };
 
   // --- Layout Classes ---
@@ -402,6 +454,10 @@ export const TicketSystem: React.FC<TicketSystemProps> = ({
                                 <button
                                     key={ticket.id}
                                     onClick={() => setExpandedTicketId(ticket.id)}
+                                    onDoubleClick={() => setPopoutTicketId(ticket.id)}
+                                    onTouchStart={() => { longPressTimer.current = setTimeout(() => setPopoutTicketId(ticket.id), 500); }}
+                                    onTouchEnd={() => { if (longPressTimer.current) clearTimeout(longPressTimer.current); }}
+                                    onTouchMove={() => { if (longPressTimer.current) clearTimeout(longPressTimer.current); }}
                                     className={`w-full text-left p-3 rounded-xl border transition-all relative overflow-hidden group ${
                                         isActive
                                         ? (isDark ? 'bg-blue-900/20 border-blue-500/50' : 'bg-blue-50 border-blue-200')
@@ -571,7 +627,7 @@ export const TicketSystem: React.FC<TicketSystemProps> = ({
                                         value={replyText}
                                         onChange={(e) => setReplyText(e.target.value)}
                                         onKeyDown={handleKeyDown}
-                                        placeholder="Schreiben Sie eine Antwort... (Ctrl+Enter zum Senden)"
+                                        placeholder="Antwort... (Strg+Enter = Senden · Strg+Shift+Enter = Senden & Abschließen)"
                                         className={`w-full p-4 bg-transparent outline-none text-sm resize-none h-20 ${isDark ? 'text-white placeholder:text-slate-500' : 'text-slate-900 placeholder:text-slate-400'}`}
                                     />
                                     <div className={`flex justify-between items-center px-2 pb-2`}>
@@ -649,6 +705,121 @@ export const TicketSystem: React.FC<TicketSystemProps> = ({
             onSave={handleSaveNewTicket}
             theme={theme}
         />
+
+        {popoutTicket && createPortal(
+            <div className="fixed inset-0 z-[100000] flex items-center justify-center p-4" onClick={() => setPopoutTicketId(null)}>
+                <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+                <div
+                    onClick={e => e.stopPropagation()}
+                    className={`relative rounded-2xl shadow-2xl border flex flex-col overflow-hidden ${isDark ? 'bg-[#0f172a] border-slate-700' : 'bg-white border-slate-200'}`}
+                    style={{ width: `min(${popoutSize.w}px, calc(100vw - 32px))`, height: `min(${popoutSize.h}px, calc(100vh - 32px))` }}
+                >
+                    {/* Header */}
+                    <div className={`flex-none px-4 py-3 border-b flex items-center justify-between gap-3 ${isDark ? 'bg-[#1e293b] border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
+                        <div className="flex items-center gap-3 min-w-0">
+                            <h2 className={`text-sm font-bold truncate ${isDark ? 'text-white' : 'text-slate-900'}`}>{popoutTicket.subject}</h2>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                            <span className={`text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                                {new Date(popoutTicket.messages[0].timestamp).toLocaleDateString()}
+                            </span>
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border uppercase tracking-wider ${getStatusColor(popoutTicket.status, popoutTicket.priority)}`}>
+                                {popoutTicket.status === 'Closed' ? 'Erledigt' : 'Offen'}
+                            </span>
+                            <button onClick={() => setPopoutTicketId(null)} className={`p-1 rounded-lg transition-colors ${isDark ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-slate-200 text-slate-500'}`}>
+                                <X size={16} />
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Messages */}
+                    <div className="flex-1 overflow-y-auto p-4 space-y-2">
+                        {(Object.entries(popoutGrouped) as [string, TicketMessage[]][]).map(([dateKey, msgs]) => (
+                            <div key={dateKey}>
+                                <div className="my-2 flex items-center gap-4">
+                                    <div className={`h-px flex-1 ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`} />
+                                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${isDark ? 'bg-[#1e293b] border-slate-700 text-slate-400' : 'bg-white border-slate-200 text-slate-500'}`}>{getDateLabel(dateKey)}</span>
+                                    <div className={`h-px flex-1 ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`} />
+                                </div>
+                                <div className="space-y-2">
+                                    {msgs.map(msg => {
+                                        const isSystem = msg.type === 'system' || msg.author === 'System';
+                                        const isMe = msg.type === 'user' && msg.author !== 'System';
+                                        if (isSystem) return (
+                                            <div key={msg.id} className="flex flex-col items-center my-1">
+                                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${isDark ? 'bg-slate-800 text-slate-500 border-slate-700' : 'bg-slate-100 text-slate-500 border-slate-200'}`}>System</span>
+                                                <p className={`mt-1 text-xs text-center max-w-md ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{msg.text}</p>
+                                            </div>
+                                        );
+                                        return (
+                                            <div key={msg.id} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
+                                                <div className="flex items-end gap-2 max-w-[85%]">
+                                                    {!isMe && <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 border ${isDark ? 'bg-slate-800 border-slate-700 text-slate-400' : 'bg-white border-slate-200 text-slate-600'}`}><User size={12} /></div>}
+                                                    <div className={`px-3 py-2 rounded-xl text-sm leading-snug whitespace-pre-wrap ${isMe ? 'bg-[#0077B5] text-white rounded-tr-none' : (isDark ? 'bg-slate-800 text-slate-200 border border-slate-700 rounded-tl-none' : 'bg-white text-slate-800 border border-slate-200 rounded-tl-none')}`}>{msg.text}</div>
+                                                </div>
+                                                <div className={`flex items-center gap-1 mt-0.5 text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-400'} ${isMe ? 'mr-1' : 'ml-8'}`}>
+                                                    <span className="font-bold">{msg.author}</span><span>•</span><span className="font-mono">{new Date(msg.timestamp).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</span>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        ))}
+                        <div ref={popoutEndRef} />
+                    </div>
+
+                    {/* Input */}
+                    {popoutTicket.status === 'Open' && (
+                        <div className={`flex-none p-3 border-t ${isDark ? 'bg-[#1e293b] border-slate-800' : 'bg-white border-slate-200'}`}>
+                            <div className={`flex flex-col rounded-xl border focus-within:ring-2 focus-within:ring-[#0077B5]/30 transition-all ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
+                               <textarea
+                                    value={popoutReply}
+                                    onChange={e => setPopoutReply(e.target.value)}
+                                    onKeyDown={e => { if ((e.ctrlKey||e.metaKey) && e.shiftKey && e.key === 'Enter' && popoutReply.trim()) { e.preventDefault(); handlePopoutReply(true); setShowPopoutSendOptions(false); } else if ((e.ctrlKey||e.metaKey) && e.key === 'Enter' && popoutReply.trim()) { e.preventDefault(); handlePopoutReply(false); }}}
+                                    placeholder="Antwort... (Strg+Enter = Senden · Strg+Shift+Enter = Senden & Abschließen)"
+                                    className={`w-full p-3 bg-transparent outline-none text-sm resize-none h-16 ${isDark ? 'text-white placeholder:text-slate-500' : 'text-slate-900 placeholder:text-slate-400'}`}
+                                />
+                                <div className="flex justify-end items-center px-2 pb-2">
+                                    <div className="relative">
+                                        <div className="flex shadow-md shadow-blue-500/20">
+                                            <button
+                                                onClick={() => handlePopoutReply(false)}
+                                                disabled={!popoutReply.trim()}
+                                                className="px-4 py-2 rounded-l-full bg-[#0077B5] hover:bg-[#00A0DC] text-white text-xs font-bold disabled:opacity-50 disabled:bg-slate-500 transition-colors flex items-center gap-2 border-r border-blue-400/30"
+                                            >
+                                                <Send size={14} /> Senden
+                                            </button>
+                                            <button
+                                                onClick={() => setShowPopoutSendOptions(!showPopoutSendOptions)}
+                                                disabled={!popoutReply.trim()}
+                                                className="px-2 py-2 rounded-r-full bg-[#0077B5] hover:bg-[#00A0DC] text-white disabled:opacity-50 disabled:bg-slate-500 transition-colors"
+                                            >
+                                                <ChevronDown size={14} />
+                                            </button>
+                                        </div>
+                                        {showPopoutSendOptions && (
+                                            <div className={`absolute bottom-full right-0 mb-2 w-48 rounded-xl border shadow-xl overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-2 ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
+                                                <button
+                                                    onClick={() => { handlePopoutReply(true); setShowPopoutSendOptions(false); }}
+                                                    className={`w-full text-left px-4 py-3 text-xs font-bold flex items-center gap-2 transition-colors ${isDark ? 'text-slate-200 hover:bg-slate-700' : 'text-slate-700 hover:bg-slate-50'}`}
+                                                >
+                                                    <Lock size={14} /> Senden & Abschließen
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Resize handle - desktop only */}
+                    <div onMouseDown={handleResizeStart} className="hidden md:block absolute bottom-0 right-0 w-4 h-4 cursor-nwse-resize" style={{background:'linear-gradient(135deg,transparent 50%,rgba(100,116,139,0.4) 50%)',borderRadius:'0 0 12px 0'}} />
+                </div>
+            </div>,
+            document.body
+        )}
     </div>
   );
 };
