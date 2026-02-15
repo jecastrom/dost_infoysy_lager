@@ -303,21 +303,20 @@ export const OrderManagement: React.FC<OrderManagementProps> = ({
       if (activeMenuId === id) {
           setActiveMenuId(null);
       } else {
-          // Calculate position to ensure it fits
+          // All menus use position:fixed portals — use viewport coords only (no scroll offsets)
           const rect = e.currentTarget.getBoundingClientRect();
-          const scrollTop = window.scrollY || document.documentElement.scrollTop;
-          const scrollLeft = window.scrollX || document.documentElement.scrollLeft;
           
-          // For modal menu, use left positioning. For table menu, use right positioning
           if (id === 'modal') {
+              // Modal menu: open UPWARD from button, right-aligned
               setMenuPos({ 
-                  top: rect.top - 4,
+                  top: rect.top,
                   right: document.body.clientWidth - rect.right
               });
           } else {
+              // Table menu: open downward from button, right-aligned
               setMenuPos({ 
-                  top: rect.bottom + scrollTop, 
-                  right: document.body.clientWidth - (rect.right + scrollLeft) 
+                  top: rect.bottom, 
+                  right: document.body.clientWidth - rect.right 
               });
           }
           setActiveMenuId(id);
@@ -1002,9 +1001,10 @@ export const OrderManagement: React.FC<OrderManagementProps> = ({
                                             isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'
                                         }`}
                                         style={{
-                                            bottom: window.innerHeight - (menuPos.top || 0),
-                                            right: menuPos.right,
-                                        }} >
+                                            bottom: window.innerHeight - (menuPos.top ?? 0),
+                                            right: menuPos.right ?? 0,
+                                        }}
+                                    >
                                         <div className="flex flex-col gap-1">
                                             {/* Erstellen - Quick Receipt */}
                                             {!selectedOrder.isArchived && !isOrderComplete(selectedOrder) && !selectedOrder.linkedReceiptId && selectedOrder.status !== 'Storniert' && (
