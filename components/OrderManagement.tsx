@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { 
@@ -187,7 +186,7 @@ const OrderStatusBadges = ({ order, linkedReceipt, theme }: { order: PurchaseOrd
         }
     }
 
-    return <div className="flex flex-wrap gap-2 items-center">{badges}</div>;
+    return <div className="status-pill-stack">{badges}</div>;
 };
 
 // Filter Types
@@ -538,7 +537,7 @@ export const OrderManagement: React.FC<OrderManagementProps> = ({
                    </div>
 
                    {/* Status Badges */}
-                   <div className="flex items-center gap-2 mb-3 flex-wrap">
+                   <div className="mb-3">
                      <OrderStatusBadges order={order} linkedReceipt={linkedReceipt} theme={theme} />
                    </div>
 
